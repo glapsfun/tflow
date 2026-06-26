@@ -16,7 +16,14 @@ capability.
 - **seed links** — URLs read first, before broader search.
 - **depth** — maximum link hops away from a starting source.
 - **breadth** — maximum sources considered per phase.
-- **token_budget** — approximate total reading budget for the whole pass.
+- **token_budget** — positive integer approximate reading budget for the whole
+  pass; reject zero, negative, or non-numeric values.
+
+## Preflight
+
+Validate all inputs and confirm that at least one external source can be opened.
+If no source can be opened, report the missing capability and stop without a
+Research Brief or JSON brief. Never manufacture citations from model memory.
 
 ## Phases
 
@@ -73,10 +80,11 @@ unbounded-recursion failure mode.
   starting source. Hops beyond `depth` are not followed.
 - **Breadth ceiling** — `breadth` caps how many sources are considered per
   phase, so a single phase cannot fan out without limit.
-- **Forced synthesis near token_budget** — track approximate tokens read. When
-  the running total approaches `token_budget`, stop searching and following and
-  move immediately to synthesis. It is correct to produce a brief with open
-  questions rather than exhaust the budget chasing more links.
+- **Token accounting and forced synthesis** — use runtime-reported token counts
+  when available. Otherwise estimate cumulative reading cost as
+  `ceil(words * 4 / 3)`. Stop searching and following at 80% of `token_budget`
+  and move immediately to synthesis. At 100%, stop all external reading. Record
+  unresolved work under `open_questions`.
 
 ## Stopping rules
 
@@ -85,8 +93,8 @@ Stop the loop and synthesize when any of these is true:
 1. The `recommendation` is already well-supported and more sources would not
    change it (early stop — preferred).
 2. The total URL cap has been reached.
-3. The reading total has reached the forced-synthesis threshold near
-   `token_budget`.
+3. Estimated or reported reading reaches 80% of `token_budget`; stop opening
+   sources and synthesize. Never continue external reading at or beyond 100%.
 4. Every remaining open sub-question depends on information no available source
    provides; record these under `open_questions`.
 

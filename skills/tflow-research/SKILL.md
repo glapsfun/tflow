@@ -27,7 +27,7 @@ and the exact brief contract live in linked reference files:
 
 ## Invocation
 
-A research request requires one input and accepts four optional controls.
+A research request requires one input and accepts five optional controls.
 
 - **topic** (required): the question or prompt to research. Be specific about
   the decision the brief must support.
@@ -37,13 +37,24 @@ A research request requires one input and accepts four optional controls.
   searching more broadly.
 - **depth** (optional): how many link hops to follow away from a source.
 - **breadth** (optional): how many sources to consider per phase.
-- **token_budget** (optional): the approximate reading budget for the whole
-  pass. The agent forces synthesis as this budget nears exhaustion.
+- **token_budget** (optional): a positive integer giving the approximate reading
+  budget for the whole pass. The agent starts synthesis at 80% and stops reading
+  at 100%.
 
 `depth`, `breadth`, and `token_budget` are the cost controls. They satisfy the
 budget requirement (RSCH-03, RSCH-04) and prevent the unbounded recursion
 failure mode. See the [research loop](references/research-loop.md) for how the
 agent applies the visited set, URL cap, and stopping rules.
+
+## Preflight and Failure
+
+Validate `mode`, `depth`, `breadth`, and `token_budget` before research begins.
+Reject invalid or non-positive numeric controls.
+
+Confirm that the runtime can open at least one external source through its web,
+search, or fetch tools. If no source can be opened, report the missing
+capability and stop. Do not emit a Research Brief, JSON brief, citations, or
+confidence labels, and do not substitute model memory for opened evidence.
 
 ## Conservative Defaults
 
@@ -53,14 +64,13 @@ for a larger run.
 
 | Mode | Goal | Output emphasis | Default depth | Default breadth | Default token_budget |
 |------|------|-----------------|---------------|-----------------|----------------------|
-| `brainstorm` | Map the option space for an open topic | Many `options`, light `evidence`, sharp `open_questions` | 1 | 3 | small |
-| `find-idea` | Pick a recommended approach from candidates | A clear `recommendation` backed by compared `options` | 2 | 4 | medium |
-| `improve-idea` | Strengthen one existing idea | Deep `evidence` and `risks` for the current direction | 2 | 3 | medium |
+| `brainstorm` | Map the option space for an open topic | Many `options`, light `evidence`, sharp `open_questions` | 1 | 3 | 8,000 |
+| `find-idea` | Pick a recommended approach from candidates | A clear `recommendation` backed by compared `options` | 2 | 4 | 16,000 |
+| `improve-idea` | Strengthen one existing idea | Deep `evidence` and `risks` for the current direction | 2 | 3 | 16,000 |
 
-"Small" and "medium" are intentionally relative: the agent should start at the
-low end of its own affordable range and stop early when the brief is already
-decided. Larger numbers are opt-in, never the default. See
-[research loop](references/research-loop.md) for the escalation rule.
+Reject zero, negative, or non-numeric budgets before research begins. Larger
+numbers are opt-in, never the default. See the
+[research loop](references/research-loop.md) for accounting and escalation.
 
 ## Modes
 
