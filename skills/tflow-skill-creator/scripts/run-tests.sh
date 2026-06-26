@@ -116,6 +116,18 @@ assert_grep() {
     fi
 }
 
+assert_not_grep() {
+    NAME="$1"
+    PATTERN="$2"
+    PATH_TO_CHECK="$3"
+
+    if grep -q "$PATTERN" "$PATH_TO_CHECK"; then
+        fail "$NAME" "unexpected pattern found: $PATTERN"
+    else
+        pass "$NAME"
+    fi
+}
+
 run_static_script_tests() {
     for script in "$VALIDATE" "$INIT" "$IMPROVE" "$PACKAGE"; do
         script_name="$(basename "$script")"
@@ -139,6 +151,18 @@ run_script_contract_tests() {
     assert_dir "init creates references dir" "$INIT_ROOT/skills/valid-skill/references"
     assert_dir "init creates assets dir" "$INIT_ROOT/skills/valid-skill/assets"
     run_cmd_test "init scaffold validates" 0 sh "$VALIDATE" "$INIT_ROOT/skills/valid-skill"
+    assert_grep "scaffold compatibility is scalar" \
+        '^compatibility: Agent Skills specification v1 compatible\.$' \
+        "$INIT_ROOT/skills/valid-skill/SKILL.md"
+    assert_grep "scaffold metadata value is string" \
+        '^  tflow_scaffold: "true"$' \
+        "$INIT_ROOT/skills/valid-skill/SKILL.md"
+    assert_not_grep "scaffold omits nonexistent local validator" \
+        'sh scripts/validate\.sh \.' \
+        "$INIT_ROOT/skills/valid-skill/SKILL.md"
+    assert_grep "package has direct symlink defense" \
+        'symbolic links are not portable package input' \
+        "$PACKAGE"
     run_cmd_test "init rejects invalid name" 1 sh "$INIT" InvalidName "$TMP_ROOT"
     run_cmd_test "init refuses overwrite" 1 sh "$INIT" valid-skill "$INIT_ROOT"
 
@@ -185,8 +209,25 @@ run_script_contract_tests() {
     assert_grep "improve report has testing checklist" "Testing Checklist" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
 
     run_cmd_test "package refuses unchecked evidence" 1 sh "$PACKAGE" "$INIT_ROOT/skills/valid-skill"
+    sed '/^- \[[ x]\]/d' \
+        "$INIT_ROOT/skills/valid-skill/.skill-improvement.md" \
+        > "$TMP_ROOT/improvement-empty.md"
+    mv "$TMP_ROOT/improvement-empty.md" \
+        "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+    run_cmd_test "package refuses deleted evidence" 1 sh "$PACKAGE" \
+        "$INIT_ROOT/skills/valid-skill"
+
+    sh "$IMPROVE" "$INIT_ROOT/skills/valid-skill" >/dev/null
     sed 's/- \[ \]/- [x]/g' "$INIT_ROOT/skills/valid-skill/.skill-improvement.md" > "$TMP_ROOT/improvement-complete.md"
     mv "$TMP_ROOT/improvement-complete.md" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+
+    printf 'outside\n' > "$TMP_ROOT/package-outside.txt"
+    ln -s "$TMP_ROOT/package-outside.txt" \
+        "$INIT_ROOT/skills/valid-skill/assets/external-link"
+    run_cmd_test "package refuses symlink" 1 sh "$PACKAGE" \
+        "$INIT_ROOT/skills/valid-skill"
+    rm "$INIT_ROOT/skills/valid-skill/assets/external-link"
+
     mkdir -p "$INIT_ROOT/skills/valid-skill/dist/old-package"
     printf 'stale artifact\n' > "$INIT_ROOT/skills/valid-skill/dist/old-package/stale.txt"
     run_cmd_test "package creates artifacts" 0 sh "$PACKAGE" "$INIT_ROOT/skills/valid-skill"
