@@ -3,6 +3,19 @@
 This reference expands the `tflow-skill-creator` factory loop. The scripts are
 mandatory gates; use their exit codes and output as the source of truth.
 
+## Decision Coverage
+
+- D-18: `tflow-skill-creator` is the canonical target name.
+- D-19: the factory loop is capture intent -> scaffold -> author/edit ->
+  validate -> improve -> package.
+- D-20: `scripts/init.sh`, `scripts/validate.sh`, `scripts/improve.sh`, and
+  `scripts/package.sh` are mandatory gates.
+- D-21: missing scripts and non-zero gate exits fail closed.
+- D-22: runtime path notes stay outside the main `SKILL.md`.
+- D-23: success requires validated source, completed `.skill-improvement.md`,
+  package artifacts, and a concise command/path summary.
+- CREATE-08: the skill factory documents the factory loop end to end.
+
 ## 1. Capture Intent
 
 Before touching files, capture:
