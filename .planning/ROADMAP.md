@@ -51,15 +51,15 @@ Plans:
   4. An agent following `tflow-research` SKILL.md can run a research task with a topic, optional seed links, and a depth/breadth budget, and receives a structured markdown brief (idea, options, evidence, recommendation, open questions, sources) plus optional JSON output
   5. The frontmatter of both `tflow-research` and `tflow-skill-creator` SKILL.md files contains only spec-defined fields (`name`, `description`, `license`, `compatibility`, `metadata`) and passes `validate.sh` clean in both `.claude/skills/` and `.codex/skills/` install locations
 
-**Plans**: 1/3 plans complete
+**Plans**: 2/3 plans complete
 Plans:
 **Wave 1**
 
-- [x] 02-01-PLAN.md — Migrate the script spine to `tflow-tflow-skill-creator` and implement `init.sh`, `improve.sh`, and `package.sh`
+- [x] 02-01-PLAN.md — Migrate the script spine to `tflow-skill-creator` and implement `init.sh`, `improve.sh`, and `package.sh`
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — Author the `tflow-tflow-skill-creator` SKILL.md and factory-loop references
+- [x] 02-02-PLAN.md — Author the `tflow-skill-creator` SKILL.md and factory-loop references
 - [ ] 02-03-PLAN.md — Author the `tflow-research` SKILL.md, research references, and portability checks
 
 **UI hint**: no
@@ -85,5 +85,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. The Keystone Gate | 1/1 | Complete    | 2026-06-24 |
-| 2. Skills Authored | 1/3 | In Progress | - |
+| 2. Skills Authored | 2/3 | In Progress | - |
 | 3. Integration Proof | 0/TBD | Not started | - |
