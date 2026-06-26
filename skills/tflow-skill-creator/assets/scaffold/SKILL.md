@@ -2,10 +2,9 @@
 name: __SKILL_NAME__
 description: Use when a focused agent capability belongs in a reusable portable skill
 license: MIT
-compatibility:
-  agentskills: ">=1.0"
+compatibility: Agent Skills specification v1 compatible.
 metadata:
-  tflow_scaffold: true
+  tflow_scaffold: "true"
 ---
 
 # __SKILL_NAME__
@@ -34,8 +33,6 @@ or reusable source material in `assets/`. Keep deterministic helpers in
 
 ## Validation Notes
 
-Before packaging or installing, validate this skill directory with:
-
-```sh
-sh scripts/validate.sh .
-```
+Return this directory to the `tflow-skill-creator` factory after authoring. The
+factory runs its own `scripts/validate.sh` against the completed skill before
+improvement evidence or package artifacts are allowed.

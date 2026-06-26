@@ -38,8 +38,27 @@ if [ ! -f "$IMPROVEMENT" ]; then
     exit 1
 fi
 
+for required in \
+    '- [x] Ran validate.sh against the final source skill' \
+    '- [x] Tested the skill against at least one realistic user prompt' \
+    '- [x] Confirmed references and assets are read only when relevant' \
+    '- [x] Confirmed no runtime-specific frontmatter or install path is required'
+do
+    COUNT=$(grep -Fxc -- "$required" "$IMPROVEMENT" || true)
+    if [ "$COUNT" -ne 1 ]; then
+        printf 'ERROR: missing or duplicated completed evidence: %s\n' "$required" >&2
+        exit 1
+    fi
+done
+
 if grep -q '^- \[ \]' "$IMPROVEMENT"; then
     printf 'ERROR: .skill-improvement.md has unchecked checklist items.\n' >&2
+    exit 1
+fi
+
+SYMLINK=$(find "$SKILL_DIR" -type l -print -quit 2>/dev/null || true)
+if [ -n "$SYMLINK" ]; then
+    printf 'ERROR: symbolic links are not portable package input: %s\n' "$SYMLINK" >&2
     exit 1
 fi
 
