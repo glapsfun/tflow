@@ -229,5 +229,6 @@ __marimo__/
 !.github/workflows/
 .github/workflows/*
 !.github/workflows/*.yml
+!.github/workflows/*.yaml
 AGENTS.md
 CLAUDE.md
