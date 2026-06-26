@@ -115,7 +115,7 @@ if [ -n "$DESC" ]; then
 
     # R-DESC-VERBS (D-04)
     VERB_PATTERN='dispatch(es|ing)?|run(s|ning)?|execut(es|ing|e)?|creat(es|ing|e)?|generat(es|ing|e)?|build(s|ing)?|process(es|ing)?|scaffold(s|ing)?|lint(s|ing)?|loop(s|ing)?|packag(es|ing|e)?|install(s|ing)?|trigger(s|ing)?|call(s|ing)?|invok(es|ing|e)?|produc(es|ing|e)?|output(s|ing)?|emit(s|ting)?|format(s|ing)?|validat(es|ing|e)?|deploy(s|ing)?'
-    if printf '%s' "$DESC" | grep -qiE "($VERB_PATTERN)"; then
+    if printf '%s' "$DESC" | grep -qiE "(^|[^a-z])($VERB_PATTERN)([^a-z]|$)"; then
         emit FAIL "desc-workflow-verb (tflow): description contains workflow verb (triggers description-as-summary pitfall)"
     else
         emit PASS "desc-workflow-verb"
