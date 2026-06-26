@@ -225,6 +225,9 @@ __marimo__/
 .planning
 .planning/*
 .help
-.github
+.github/*
+!.github/workflows/
+.github/workflows/*
+!.github/workflows/*.yml
 AGENTS.md
 CLAUDE.md
