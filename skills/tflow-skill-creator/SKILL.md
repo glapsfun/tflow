@@ -43,6 +43,9 @@ failed validation or unchecked `.skill-improvement.md` item.
 
 - Keep frontmatter to the portable Agent Skills fields: `name`, `description`,
   `license`, `compatibility`, and `metadata`.
+- Use the documented single-line frontmatter subset in
+  [portability notes](references/portability-notes.md); keep compatibility and
+  metadata values as strings.
 - Make `description` a trigger only. It must begin with `Use when` and must not
   summarize the workflow.
 - Use plain relative Markdown links such as
@@ -50,6 +53,9 @@ failed validation or unchecked `.skill-improvement.md` item.
 - Do not use path-prefix force-load syntax.
 - Keep heavy guidance in directly linked reference files.
 - Keep scripts POSIX `sh`, script-relative, and free of runtime install paths.
+- Require every bundled `sh` script to pass `sh -n`; run `shellcheck` when it is
+  available.
+- Keep the source tree symlink-free.
 
 ## Evidence Requirements
 

@@ -47,15 +47,10 @@ is not acceptable for packaging.
 
 ## Checklist Blocking Rule
 
-`scripts/package.sh` refuses to package when `.skill-improvement.md` contains any
-line that begins with:
-
-```text
-- [ ]
-```
-
-Do not remove checklist items to bypass the gate. Replace each unchecked item
-with checked evidence after the test or review is complete.
+`scripts/package.sh` requires each generated checklist line to exist exactly
+once in checked `- [x]` form. Missing, renamed, duplicated, or unchecked lines
+block packaging. Do not remove checklist items; deletion is an incomplete
+evidence state.
 
 ## Package Artifact Review
 
@@ -65,6 +60,7 @@ After packaging, inspect both outputs:
 - `dist/<skill-name>.tar.gz` exists and can be listed with `tar -tzf`;
 - no prior `dist/`, caches, editor swap files, or generated evidence files are
   inside the package;
+- source and package outputs contain no symbolic links;
 - install hints are printed as hints only, with no runtime directory writes.
 
 The final user summary should include the skill path, validation command,

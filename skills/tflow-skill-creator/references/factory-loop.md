@@ -71,9 +71,9 @@ Run validation after every material edit:
 sh skills/tflow-skill-creator/scripts/validate.sh <skill-dir>
 ```
 
-The validation gate checks the skill name, trigger description, body size,
-path-prefix force-load syntax, and bundled shell scripts when `shellcheck` is
-available.
+The validation gate checks the strict frontmatter subset, body size,
+path-prefix force-load syntax, symlink-free source, and mandatory `sh -n`
+syntax for bundled shell scripts. It also runs `shellcheck` when available.
 
 If validation fails, fix the source and re-run the command. Do not continue to
 the improvement or package gates until validation exits 0.
@@ -91,7 +91,8 @@ output, a scaffold comparison, starter-leftover checks, and a mandatory testing
 checklist. It is a report writer, not an automatic source rewriter.
 
 Complete the checklist by replacing every unchecked entry with checked evidence
-after the corresponding test or review is actually done.
+after the corresponding test or review is actually done. Packaging requires
+all four generated checklist lines to exist exactly once in checked form.
 
 ## 6. Package
 

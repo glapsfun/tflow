@@ -30,9 +30,16 @@ description: Use when an observable trigger condition applies
 license: MIT
 compatibility: Portable across Claude Code and OpenAI Codex skill directories.
 metadata:
-  key: value
+  key: "value"
 ---
 ```
+
+The dependency-free validator intentionally supports a strict single-line YAML
+subset: plain or simply quoted scalar fields plus a two-space-indented metadata
+string map. It rejects block scalars, aliases, tags, comments, inline
+collections, multiline values, mapping-valued compatibility, and non-string
+metadata. This keeps validation deterministic in POSIX `sh` without pretending
+to parse arbitrary YAML.
 
 Avoid runtime-only controls in portable source, including `when_to_use`, model
 selection, path auto-activation, hook config, and runtime-specific trigger
@@ -80,8 +87,8 @@ adapter own its own install mechanics.
 - Treat `.codex/skills/` as a GSD convention for this repository, while
   `.agents/skills/` is the official Codex convention.
 - Do not assume a runtime has `shellcheck`; `scripts/validate.sh` warns and
-  continues when it is absent.
-- Do not depend on symlink support for portable packages. A copied directory
-  must contain the files needed by the skill.
+  continues when it is absent after mandatory `sh -n` syntax checks pass.
+- Keep source trees symlink-free. Validation and packaging reject symbolic
+  links so copied packages contain the files needed by the skill.
 - Keep generated archives and `dist/` out of package input to avoid recursive
   packages.
