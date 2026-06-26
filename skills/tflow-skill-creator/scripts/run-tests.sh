@@ -93,6 +93,17 @@ assert_dir() {
     fi
 }
 
+assert_missing() {
+    NAME="$1"
+    PATH_TO_CHECK="$2"
+
+    if [ ! -e "$PATH_TO_CHECK" ]; then
+        pass "$NAME"
+    else
+        fail "$NAME" "unexpected path exists: $PATH_TO_CHECK"
+    fi
+}
+
 assert_grep() {
     NAME="$1"
     PATTERN="$2"
@@ -103,6 +114,19 @@ assert_grep() {
     else
         fail "$NAME" "pattern not found: $PATTERN"
     fi
+}
+
+run_static_script_tests() {
+    for script in "$VALIDATE" "$INIT" "$IMPROVE" "$PACKAGE"; do
+        script_name="$(basename "$script")"
+        run_cmd_test "syntax $script_name" 0 sh -n "$script"
+        assert_grep "$script_name uses set -eu" '^set -eu$' "$script"
+        if grep -Eq '^[[:space:]]*(\[\[|local[[:space:]]|declare[[:space:]]+-a)' "$script"; then
+            fail "$script_name has no bash-only syntax" "found bash-only construct"
+        else
+            pass "$script_name has no bash-only syntax"
+        fi
+    done
 }
 
 run_script_contract_tests() {
@@ -128,9 +152,13 @@ run_script_contract_tests() {
     run_cmd_test "package refuses unchecked evidence" 1 sh "$PACKAGE" "$INIT_ROOT/skills/valid-skill"
     sed 's/- \[ \]/- [x]/g' "$INIT_ROOT/skills/valid-skill/.skill-improvement.md" > "$TMP_ROOT/improvement-complete.md"
     mv "$TMP_ROOT/improvement-complete.md" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+    mkdir -p "$INIT_ROOT/skills/valid-skill/dist/old-package"
+    printf 'stale artifact\n' > "$INIT_ROOT/skills/valid-skill/dist/old-package/stale.txt"
     run_cmd_test "package creates artifacts" 0 sh "$PACKAGE" "$INIT_ROOT/skills/valid-skill"
     assert_dir "package creates inspectable dist" "$INIT_ROOT/skills/valid-skill/dist/valid-skill"
     assert_file "package creates archive" "$INIT_ROOT/skills/valid-skill/dist/valid-skill.tar.gz"
+    assert_missing "package excludes improvement evidence" "$INIT_ROOT/skills/valid-skill/dist/valid-skill/.skill-improvement.md"
+    assert_missing "package excludes nested dist output" "$INIT_ROOT/skills/valid-skill/dist/valid-skill/dist"
 
     FAIL_ROOT="$TMP_ROOT/fail-root"
     mkdir -p "$FAIL_ROOT/skills"
@@ -143,6 +171,8 @@ run_script_contract_tests() {
         fail "package leaves no artifacts after validation failure" "dist exists"
     fi
 }
+
+run_static_script_tests
 
 for fixture_dir in "$FIXTURES"/*/; do
     name="$(basename "$fixture_dir")"
