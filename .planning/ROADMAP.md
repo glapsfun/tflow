@@ -2,7 +2,7 @@
 
 ## Overview
 
-Milestone 1 builds the two foundational primitives of the tflow agentic dev flow — `validate.sh` as the keystone gate, the `skill-creator` scripts and SKILL.md as the factory, the `deep-research` SKILL.md as the methodology — plus a thin chaining agent that chains them end-to-end. The build order is dependency-driven: the gate must exist before anything is validated through it, the scripts before the SKILL.md that references them, both skills before the orchestrator that chains them.
+Milestone 1 builds the two foundational primitives of the tflow agentic dev flow — `validate.sh` as the keystone gate, the `tflow-skill-creator` scripts and SKILL.md as the factory, the `tflow-research` SKILL.md as the methodology — plus a thin chaining agent that chains them end-to-end. The build order is dependency-driven: the gate must exist before anything is validated through it, the scripts before the SKILL.md that references them, both skills before the orchestrator that chains them.
 
 ## Phases
 
@@ -14,7 +14,7 @@ Milestone 1 builds the two foundational primitives of the tflow agentic dev flow
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: The Keystone Gate** - Build and self-test `validate.sh` — the foundation of trust every other artifact depends on (completed 2026-06-24)
-- [ ] **Phase 2: Skills Authored** - Build the remaining `skill-creator` scripts, `deep-research` SKILL.md, and finalize `skill-creator` SKILL.md
+- [ ] **Phase 2: Skills Authored** - Build the remaining `tflow-tflow-skill-creator` scripts, `tflow-research` SKILL.md, and finalize `tflow-skill-creator` SKILL.md
 - [ ] **Phase 3: Integration Proof** - Build the thin chaining orchestrator and run it end-to-end to produce a skill that passes `validate.sh` clean
 
 ## Phase Details
@@ -40,7 +40,7 @@ Plans:
 
 ### Phase 2: Skills Authored
 
-**Goal**: The remaining three `skill-creator` scripts (`init`, `package`, `improve`) are shellcheck-clean and agent-runnable; `deep-research` SKILL.md documents the full methodology; `skill-creator` SKILL.md documents the factory loop — all authored to the Agent Skills open standard with portable frontmatter only and no `@`-force-load syntax
+**Goal**: The remaining three `tflow-skill-creator` scripts (`init`, `package`, `improve`) are shellcheck-clean and agent-runnable; `tflow-research` SKILL.md documents the full methodology; `tflow-skill-creator` SKILL.md documents the factory loop — all authored to the Agent Skills open standard with portable frontmatter only and no `@`-force-load syntax
 **Depends on**: Phase 1
 **Requirements**: CREATE-05, CREATE-06, CREATE-07, CREATE-08, RSCH-01, RSCH-02, RSCH-03, RSCH-04, RSCH-05, RSCH-06, PORT-01, PORT-02
 **Success Criteria** (what must be TRUE):
@@ -48,31 +48,31 @@ Plans:
   1. Running `sh scripts/init.sh <name>` produces a `skills/<name>/` directory that passes `validate.sh` clean out of the box
   2. Running `sh scripts/package.sh <skill-dir>` is gated on `validate.sh` passing and exits non-zero if validation fails
   3. Running `sh scripts/improve.sh <skill-md>` emits a diff-vs-baseline and a mandatory testing checklist; it does not allow `package` to proceed without the checklist being addressed
-  4. An agent following `deep-research` SKILL.md can run a research task with a topic, optional seed links, and a depth/breadth budget, and receives a structured markdown brief (idea, options, evidence, recommendation, open questions, sources) plus optional JSON output
-  5. The frontmatter of both `deep-research` and `skill-creator` SKILL.md files contains only spec-defined fields (`name`, `description`, `license`, `compatibility`, `metadata`) and passes `validate.sh` clean in both `.claude/skills/` and `.codex/skills/` install locations
+  4. An agent following `tflow-research` SKILL.md can run a research task with a topic, optional seed links, and a depth/breadth budget, and receives a structured markdown brief (idea, options, evidence, recommendation, open questions, sources) plus optional JSON output
+  5. The frontmatter of both `tflow-research` and `tflow-skill-creator` SKILL.md files contains only spec-defined fields (`name`, `description`, `license`, `compatibility`, `metadata`) and passes `validate.sh` clean in both `.claude/skills/` and `.codex/skills/` install locations
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans complete
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Migrate the script spine to `tflow-skill-creator` and implement `init.sh`, `improve.sh`, and `package.sh`
+- [x] 02-01-PLAN.md — Migrate the script spine to `tflow-tflow-skill-creator` and implement `init.sh`, `improve.sh`, and `package.sh`
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — Author the `tflow-skill-creator` SKILL.md and factory-loop references
+- [ ] 02-02-PLAN.md — Author the `tflow-tflow-skill-creator` SKILL.md and factory-loop references
 - [ ] 02-03-PLAN.md — Author the `tflow-research` SKILL.md, research references, and portability checks
 
 **UI hint**: no
 
 ### Phase 3: Integration Proof
 
-**Goal**: A thin chaining orchestrator agent runs unattended from a plain-text intent, chains `deep-research` → `skill-creator`, and produces a new skill directory that passes `validate.sh` clean — proving the factory can build itself
+**Goal**: A thin chaining orchestrator agent runs unattended from a plain-text intent, chains `tflow-research` → `tflow-skill-creator`, and produces a new skill directory that passes `validate.sh` clean — proving the factory can build itself
 **Depends on**: Phase 2
 **Requirements**: AGENT-01, AGENT-02, AGENT-03
 **Success Criteria** (what must be TRUE):
 
   1. The orchestrator agent file contains only sequencing instructions — no research logic, no SKILL.md authoring rules embedded in it
-  2. Given a plain-text intent, the orchestrator runs unattended: invokes `deep-research`, passes the markdown brief via `<research_brief>` tag to `skill-creator`, and `skill-creator` produces a skill directory
+  2. Given a plain-text intent, the orchestrator runs unattended: invokes `tflow-research`, passes the markdown brief via `<research_brief>` tag to `tflow-skill-creator`, and `tflow-skill-creator` produces a skill directory
   3. The skill directory produced by the orchestrator run passes `sh scripts/validate.sh` clean (exit 0) without human intervention
 
 **Plans**: TBD
@@ -85,5 +85,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. The Keystone Gate | 1/1 | Complete    | 2026-06-24 |
-| 2. Skills Authored | 0/TBD | Not started | - |
+| 2. Skills Authored | 1/3 | In Progress | - |
 | 3. Integration Proof | 0/TBD | Not started | - |
