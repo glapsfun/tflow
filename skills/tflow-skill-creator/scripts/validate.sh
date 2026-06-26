@@ -62,8 +62,10 @@ fi
 # ── Rule Set A: Name rules (spec) ─────────────────────────────────────────────
 
 if [ -n "$NAME" ]; then
-    # R-NAME-LEN
-    NAME_LEN=$(printf '%s' "$NAME" | wc -c | tr -d ' ')
+    # R-NAME-LEN — spec limit is a character count; wc -m counts characters
+    # under a UTF-8 locale (and degrades to bytes under the C locale, so pure
+    # ASCII is unaffected). Avoids over-counting multi-byte UTF-8 names.
+    NAME_LEN=$(printf '%s' "$NAME" | wc -m | tr -d ' ')
     if [ "$NAME_LEN" -gt 64 ]; then
         emit FAIL "name-length (spec): $NAME_LEN chars (max 64)"
     else
@@ -89,8 +91,10 @@ fi
 # ── Rule Set A: Description rules (spec) ──────────────────────────────────────
 
 if [ -n "$DESC" ]; then
-    # R-DESC-LEN
-    DESC_LEN=$(printf '%s' "$DESC" | wc -c | tr -d ' ')
+    # R-DESC-LEN — spec limits (1-1024) are character counts; wc -m counts
+    # characters under a UTF-8 locale (degrades to bytes under C, so ASCII is
+    # unaffected). Avoids over-counting multi-byte UTF-8 descriptions.
+    DESC_LEN=$(printf '%s' "$DESC" | wc -m | tr -d ' ')
     if [ "$DESC_LEN" -lt 1 ] || [ "$DESC_LEN" -gt 1024 ]; then
         emit FAIL "desc-length (spec): $DESC_LEN chars (must be 1-1024)"
     else
