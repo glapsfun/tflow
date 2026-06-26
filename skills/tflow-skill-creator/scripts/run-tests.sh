@@ -61,7 +61,7 @@ run_cmd_test() {
     if "$@" >/dev/null 2>&1; then
         ACTUAL=0
     else
-        ACTUAL=1
+        ACTUAL=$?
     fi
 
     if [ "$ACTUAL" = "$EXPECTED" ]; then
@@ -141,6 +141,41 @@ run_script_contract_tests() {
     run_cmd_test "init scaffold validates" 0 sh "$VALIDATE" "$INIT_ROOT/skills/valid-skill"
     run_cmd_test "init rejects invalid name" 1 sh "$INIT" InvalidName "$TMP_ROOT"
     run_cmd_test "init refuses overwrite" 1 sh "$INIT" valid-skill "$INIT_ROOT"
+
+    run_cmd_test "validate rejects multiple targets" 2 sh "$VALIDATE" \
+        "$FIXTURES/fail-bad-name" "$FIXTURES/pass-well-formed"
+    run_cmd_test "validate rejects duplicate quiet option" 2 sh "$VALIDATE" \
+        --quiet --quiet "$FIXTURES/pass-well-formed"
+
+    BODY_RULE_DIR="$TMP_ROOT/body-horizontal-rules"
+    mkdir -p "$BODY_RULE_DIR"
+    awk '
+        BEGIN { delimiters = 0; replacements = 0 }
+        /^---$/ && delimiters < 2 {
+            delimiters++
+            print
+            next
+        }
+        delimiters == 2 && replacements < 2 && /^Line [0-9]+ of body content\.$/ {
+            print "---"
+            replacements++
+            next
+        }
+        { print }
+    ' "$FIXTURES/fail-body-too-long/SKILL.md" > "$BODY_RULE_DIR/SKILL.md"
+    sed 's/name: fail-body-too-long/name: body-horizontal-rules/' \
+        "$BODY_RULE_DIR/SKILL.md" > "$TMP_ROOT/body-horizontal-rules.md"
+    mv "$TMP_ROOT/body-horizontal-rules.md" "$BODY_RULE_DIR/SKILL.md"
+    run_cmd_test "body horizontal rules still count" 1 sh "$VALIDATE" "$BODY_RULE_DIR"
+
+    SYMLINK_DIR="$TMP_ROOT/symlink-skill"
+    cp -R "$FIXTURES/pass-well-formed" "$SYMLINK_DIR"
+    sed 's/name: pass-well-formed/name: symlink-skill/' \
+        "$SYMLINK_DIR/SKILL.md" > "$TMP_ROOT/symlink-skill.md"
+    mv "$TMP_ROOT/symlink-skill.md" "$SYMLINK_DIR/SKILL.md"
+    printf 'outside\n' > "$TMP_ROOT/outside.txt"
+    ln -s "$TMP_ROOT/outside.txt" "$SYMLINK_DIR/external-link"
+    run_cmd_test "validate rejects symlink" 1 sh "$VALIDATE" "$SYMLINK_DIR"
 
     run_cmd_test "improve writes report" 0 sh "$IMPROVE" "$INIT_ROOT/skills/valid-skill"
     assert_file "improve report exists" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
