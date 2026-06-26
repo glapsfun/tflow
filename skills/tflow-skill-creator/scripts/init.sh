@@ -45,6 +45,9 @@ mkdir -p "$TARGET_DIR/scripts" "$TARGET_DIR/references" "$TARGET_DIR/assets"
 sed "s/__SKILL_NAME__/$SKILL_NAME/g" "$SCAFFOLD" > "$TARGET_DIR/SKILL.md"
 
 if ! sh "$VALIDATE" "$TARGET_DIR"; then
+    # Remove the half-created scaffold so the command stays re-runnable
+    # (otherwise the [ -e "$TARGET_DIR" ] guard above trips on retry).
+    rm -rf "$TARGET_DIR"
     printf 'ERROR: generated scaffold failed validation: %s\n' "$TARGET_DIR" >&2
     exit 1
 fi
