@@ -221,6 +221,7 @@ __marimo__/
 .codex
 .claude
 .planning
+.planning/*
 .help
 .github
 AGENTS.md

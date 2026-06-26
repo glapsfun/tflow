@@ -53,8 +53,12 @@ Plans:
 
 **Plans**: 3 plans
 Plans:
+**Wave 1**
 
 - [ ] 02-01-PLAN.md — Migrate the script spine to `tflow-skill-creator` and implement `init.sh`, `improve.sh`, and `package.sh`
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 02-02-PLAN.md — Author the `tflow-skill-creator` SKILL.md and factory-loop references
 - [ ] 02-03-PLAN.md — Author the `tflow-research` SKILL.md, research references, and portability checks
 
