@@ -8,9 +8,8 @@ compatibility: Portable Agent Skill source for Claude Code, OpenAI Codex, and ru
 # tflow Research
 
 Use this skill to turn a topic into a bounded research pass that ends in a
-sourced decision brief. The canonical target is `tflow-research`; the older
-`deep-research` name is historical context only and must not name any
-deliverable here.
+sourced decision brief. The canonical target name for this research methodology
+is `tflow-research`.
 
 This skill is a methodology, not a search engine. It does not bundle a search
 provider, API key, or crawler. It uses the agent's own web and fetch tools
