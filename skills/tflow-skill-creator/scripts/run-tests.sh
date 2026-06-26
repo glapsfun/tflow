@@ -1,15 +1,37 @@
 #!/bin/sh
-# run-tests.sh — POSIX sh test runner for validate.sh
+# run-tests.sh — POSIX sh test runner for tflow-skill-creator scripts
 # Usage: sh run-tests.sh
-# Runs validate.sh against each fixture and asserts expected exit code.
+# Runs validate.sh fixtures and script contract tests.
 # Exits 0 if all tests pass; exits 1 if any test fails.
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VALIDATE="$SCRIPT_DIR/validate.sh"
+INIT="$SCRIPT_DIR/init.sh"
+IMPROVE="$SCRIPT_DIR/improve.sh"
+PACKAGE="$SCRIPT_DIR/package.sh"
 FIXTURES="$SCRIPT_DIR/fixtures"
+TMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/tflow-tests.XXXXXX")
 PASS=0
 FAIL=0
+
+cleanup() {
+    rm -rf "$TMP_ROOT"
+}
+trap cleanup EXIT HUP INT TERM
+
+pass() {
+    NAME="$1"
+    printf 'PASS: %s\n' "$NAME"
+    PASS=$((PASS + 1))
+}
+
+fail() {
+    NAME="$1"
+    MSG="$2"
+    printf 'FAIL: %s (%s)\n' "$NAME" "$MSG" >&2
+    FAIL=$((FAIL + 1))
+}
 
 run_test() {
     FIXTURE_DIR="$1"
@@ -31,6 +53,97 @@ run_test() {
     fi
 }
 
+run_cmd_test() {
+    NAME="$1"
+    EXPECTED="$2"
+    shift 2
+
+    if "$@" >/dev/null 2>&1; then
+        ACTUAL=0
+    else
+        ACTUAL=1
+    fi
+
+    if [ "$ACTUAL" = "$EXPECTED" ]; then
+        pass "$NAME (exit $EXPECTED as expected)"
+    else
+        fail "$NAME" "expected exit $EXPECTED, got $ACTUAL"
+    fi
+}
+
+assert_file() {
+    NAME="$1"
+    PATH_TO_CHECK="$2"
+
+    if [ -f "$PATH_TO_CHECK" ]; then
+        pass "$NAME"
+    else
+        fail "$NAME" "missing file $PATH_TO_CHECK"
+    fi
+}
+
+assert_dir() {
+    NAME="$1"
+    PATH_TO_CHECK="$2"
+
+    if [ -d "$PATH_TO_CHECK" ]; then
+        pass "$NAME"
+    else
+        fail "$NAME" "missing directory $PATH_TO_CHECK"
+    fi
+}
+
+assert_grep() {
+    NAME="$1"
+    PATTERN="$2"
+    PATH_TO_CHECK="$3"
+
+    if grep -q "$PATTERN" "$PATH_TO_CHECK"; then
+        pass "$NAME"
+    else
+        fail "$NAME" "pattern not found: $PATTERN"
+    fi
+}
+
+run_script_contract_tests() {
+    INIT_ROOT="$TMP_ROOT/init-root"
+    mkdir -p "$INIT_ROOT"
+
+    run_cmd_test "init valid-skill" 0 sh "$INIT" valid-skill "$INIT_ROOT"
+    assert_file "init creates SKILL.md" "$INIT_ROOT/skills/valid-skill/SKILL.md"
+    assert_dir "init creates scripts dir" "$INIT_ROOT/skills/valid-skill/scripts"
+    assert_dir "init creates references dir" "$INIT_ROOT/skills/valid-skill/references"
+    assert_dir "init creates assets dir" "$INIT_ROOT/skills/valid-skill/assets"
+    run_cmd_test "init scaffold validates" 0 sh "$VALIDATE" "$INIT_ROOT/skills/valid-skill"
+    run_cmd_test "init rejects invalid name" 1 sh "$INIT" InvalidName "$TMP_ROOT"
+    run_cmd_test "init refuses overwrite" 1 sh "$INIT" valid-skill "$INIT_ROOT"
+
+    run_cmd_test "improve writes report" 0 sh "$IMPROVE" "$INIT_ROOT/skills/valid-skill"
+    assert_file "improve report exists" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+    assert_grep "improve report has validation status" "Validation" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+    assert_grep "improve report has scaffold comparison" "Scaffold Comparison" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+    assert_grep "improve report has placeholder checks" "Placeholder" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+    assert_grep "improve report has testing checklist" "Testing Checklist" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+
+    run_cmd_test "package refuses unchecked evidence" 1 sh "$PACKAGE" "$INIT_ROOT/skills/valid-skill"
+    sed 's/- \[ \]/- [x]/g' "$INIT_ROOT/skills/valid-skill/.skill-improvement.md" > "$TMP_ROOT/improvement-complete.md"
+    mv "$TMP_ROOT/improvement-complete.md" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+    run_cmd_test "package creates artifacts" 0 sh "$PACKAGE" "$INIT_ROOT/skills/valid-skill"
+    assert_dir "package creates inspectable dist" "$INIT_ROOT/skills/valid-skill/dist/valid-skill"
+    assert_file "package creates archive" "$INIT_ROOT/skills/valid-skill/dist/valid-skill.tar.gz"
+
+    FAIL_ROOT="$TMP_ROOT/fail-root"
+    mkdir -p "$FAIL_ROOT/skills"
+    cp -R "$FIXTURES/fail-bad-name" "$FAIL_ROOT/skills/fail-bad-name"
+    printf '%s\n' '- [x] Validation reviewed' > "$FAIL_ROOT/skills/fail-bad-name/.skill-improvement.md"
+    run_cmd_test "package refuses invalid skill" 1 sh "$PACKAGE" "$FAIL_ROOT/skills/fail-bad-name"
+    if [ ! -e "$FAIL_ROOT/skills/fail-bad-name/dist" ]; then
+        pass "package leaves no artifacts after validation failure"
+    else
+        fail "package leaves no artifacts after validation failure" "dist exists"
+    fi
+}
+
 for fixture_dir in "$FIXTURES"/*/; do
     name="$(basename "$fixture_dir")"
     case "$name" in
@@ -39,6 +152,8 @@ for fixture_dir in "$FIXTURES"/*/; do
         *)      printf 'SKIP: %s (no pass-/fail- prefix)\n' "$name" >&2 ;;
     esac
 done
+
+run_script_contract_tests
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 if [ "$FAIL" -gt 0 ]; then
