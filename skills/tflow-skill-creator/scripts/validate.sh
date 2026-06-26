@@ -114,7 +114,11 @@ if [ -n "$DESC" ]; then
     fi
 
     # R-DESC-VERBS (D-04)
-    VERB_PATTERN='dispatch(es|ing)?|run(s|ning)?|execut(es|ing|e)?|creat(es|ing|e)?|generat(es|ing|e)?|build(s|ing)?|process(es|ing)?|scaffold(s|ing)?|lint(s|ing)?|loop(s|ing)?|packag(es|ing|e)?|install(s|ing)?|trigger(s|ing)?|call(s|ing)?|invok(es|ing|e)?|produc(es|ing|e)?|output(s|ing)?|emit(s|ting)?|format(s|ing)?|validat(es|ing|e)?|deploy(s|ing)?'
+    # NOTE: "trigger" is intentionally NOT a banned verb — portability-notes.md
+    # teaches trigger-condition phrasing ("Use when an observable trigger
+    # condition applies") as the recommended description style, so the validator
+    # must not reject the wording it recommends.
+    VERB_PATTERN='dispatch(es|ing)?|run(s|ning)?|execut(es|ing|e)?|creat(es|ing|e)?|generat(es|ing|e)?|build(s|ing)?|process(es|ing)?|scaffold(s|ing)?|lint(s|ing)?|loop(s|ing)?|packag(es|ing|e)?|install(s|ing)?|call(s|ing)?|invok(es|ing|e)?|produc(es|ing|e)?|output(s|ing)?|emit(s|ting)?|format(s|ing)?|validat(es|ing|e)?|deploy(s|ing)?'
     if printf '%s' "$DESC" | grep -qiE "(^|[^a-z])($VERB_PATTERN)([^a-z]|$)"; then
         emit FAIL "desc-workflow-verb (tflow): description contains workflow verb (triggers description-as-summary pitfall)"
     else
