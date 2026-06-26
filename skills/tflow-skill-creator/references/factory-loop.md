@@ -29,7 +29,9 @@ Before touching files, capture:
   layouts.
 
 If the user provided a research brief, preserve the brief as source context and
-convert only the stable decisions into the skill.
+convert only the stable decisions into the skill. A research brief delivered inside
+a `<research_brief>` ... `</research_brief>` tag is recognized as that provided brief,
+and its stable decisions are converted into the skill.
 
 ## 2. Scaffold
 

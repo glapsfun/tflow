@@ -220,6 +220,8 @@ __marimo__/
 # AI
 .codex
 .claude
+# Throwaway scratch root for the skill-factory proof run (never committed)
+/.proof/
 .planning
 .planning/*
 .help
