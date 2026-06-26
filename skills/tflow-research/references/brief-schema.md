@@ -16,14 +16,16 @@ same fields are the markdown headings and the JSON keys.
 | `mode` | text | yes | The pass mode: `brainstorm`, `find-idea`, or `improve-idea`. | never empty |
 | `recommendation` | text | yes | The decision or lead answer the brief supports; one or two sentences. | never empty |
 | `options` | list | yes | Candidate directions considered, each with its tradeoff. | empty list allowed |
-| `evidence` | list | yes | Claims and data behind the recommendation, each citing a source and a confidence label. | empty list allowed |
+| `evidence` | list | yes | Claims and data behind the recommendation, each citing one or more opened sources and a confidence label. | never empty |
 | `risks` | list | yes | What could make the recommendation wrong or costly. | empty list allowed |
 | `open_questions` | list | yes | What remains unresolved within the budget. | empty list allowed |
-| `sources` | list | yes | Cited URLs, each with a short summary and confidence label. | empty list allowed |
+| `sources` | list | yes | Opened absolute URLs, each with a short summary and confidence label. | never empty |
 
-`topic`, `mode`, and `recommendation` are always populated — a brief without a
-`recommendation` is not a valid decision brief. The five list fields may be
-empty lists when a section genuinely has no entries, but they are never omitted.
+`topic`, `mode`, `recommendation`, `evidence`, and `sources` are always
+populated. A pass that cannot support a recommendation with at least one
+material evidence entry and one opened source must report an inconclusive
+research failure instead of emitting a Research Brief. `options`, `risks`, and
+`open_questions` may be empty lists, but they are never omitted.
 
 ## Markdown brief
 
@@ -47,9 +49,9 @@ Use these headings, in this order. The field names above are the headings.
 | ...    | ...      |
 
 ## evidence
-| Claim | Source | Confidence |
-|-------|--------|------------|
-| ...   | [url]  | high/medium/low |
+| Claim | Sources | Confidence |
+|-------|---------|------------|
+| ...   | [descriptive label](https://example.test/path) | high/medium/low |
 
 ## risks
 - <risk and why it matters>
@@ -58,11 +60,12 @@ Use these headings, in this order. The field names above are the headings.
 - <what is still unresolved>
 
 ## sources
-- [url] — <short summary> (confidence: high/medium/low)
+- [descriptive label](https://example.test/path) — <short summary> (confidence: high/medium/low)
 ```
 
-When a list section has no entries, keep the heading and write a single line
-such as `- none` so the section is explicit rather than missing.
+When `options`, `risks`, or `open_questions` has no entries, keep the heading
+and write `- none`. `evidence` and `sources` must never be empty in an emitted
+brief.
 
 ## Optional JSON brief
 
@@ -79,7 +82,11 @@ one, including `risks` and `open_questions`.
     { "option": "string", "tradeoff": "string" }
   ],
   "evidence": [
-    { "claim": "string", "source": "url", "confidence": "high | medium | low" }
+    {
+      "claim": "string",
+      "sources": ["https://example.test/a", "https://example.test/b"],
+      "confidence": "high | medium | low"
+    }
   ],
   "risks": [
     { "risk": "string" }
@@ -88,7 +95,11 @@ one, including `risks` and `open_questions`.
     "string"
   ],
   "sources": [
-    { "url": "url", "summary": "string", "confidence": "high | medium | low" }
+    {
+      "url": "https://example.test/a",
+      "summary": "string",
+      "confidence": "high | medium | low"
+    }
   ]
 }
 ```
@@ -97,8 +108,10 @@ Rules for the JSON mirror:
 
 - The eight top-level keys match the markdown headings exactly; none is renamed,
   added, or dropped.
-- A section with no entries is an empty array (`[]`), never a missing key and
-  never `null`.
+- `evidence` and top-level `sources` contain at least one entry; the other list
+  fields use `[]` when empty.
 - `topic`, `mode`, and `recommendation` are non-empty strings.
-- Every `evidence` and `sources` entry carries a `confidence` label, matching
-  the labels defined in [source confidence](source-confidence.md).
+- Every `evidence[].sources` value is a non-empty array of absolute URLs also
+  represented in the top-level `sources` list.
+- Every `evidence` and top-level `sources` entry carries a `confidence` label
+  matching [source confidence](source-confidence.md).

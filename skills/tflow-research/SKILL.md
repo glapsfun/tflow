@@ -88,8 +88,8 @@ numbers are opt-in, never the default. See the
 ## The Research Loop
 
 Every pass follows the same phases. Full detail, including the visited set,
-total URL cap, depth and breadth ceilings, and forced synthesis near the token
-budget, is in [research loop](references/research-loop.md).
+total URL cap, depth and breadth ceilings, and forced synthesis at the token
+threshold, is in [research loop](references/research-loop.md).
 
 1. **Plan** — break the topic into sub-questions and decide what evidence would
    settle each one.
@@ -129,6 +129,10 @@ fields, in this order:
 - **open_questions** — what remains unresolved within the budget.
 - **sources** — the cited URLs with short summaries and confidence.
 
+Every emitted brief must contain at least one material `evidence` entry and one
+corresponding opened source. If opened sources cannot support a recommendation,
+report an inconclusive research failure instead of emitting a brief.
+
 These mandatory fields satisfy RSCH-05 and the decision-brief decision (D-16).
 The exact markdown headings and field meanings are in
 [brief schema](references/brief-schema.md).
@@ -140,20 +144,29 @@ a JSON object that mirrors the markdown brief exactly:
 
 ```json
 {
-  "topic": "",
-  "mode": "",
-  "recommendation": "",
+  "topic": "decision question",
+  "mode": "find-idea",
+  "recommendation": "lead answer",
   "options": [],
-  "evidence": [],
+  "evidence": [{
+    "claim": "supporting claim",
+    "sources": ["https://example.test/a"],
+    "confidence": "high"
+  }],
   "risks": [],
   "open_questions": [],
-  "sources": []
+  "sources": [{
+    "url": "https://example.test/a",
+    "summary": "what the source supports",
+    "confidence": "high"
+  }]
 }
 ```
 
-Empty arrays are valid when a section has no entries. The JSON keys must match
-the markdown fields one for one, including `risks` and `open_questions`. This
-optional JSON mirror satisfies RSCH-06 and the JSON decision (D-17). See
+Empty arrays are valid only for `options`, `risks`, and `open_questions`.
+`evidence` and `sources` must contain at least one entry. The JSON keys must
+match the markdown fields one for one, including `risks` and `open_questions`.
+This optional JSON mirror satisfies RSCH-06 and the JSON decision (D-17). See
 [brief schema](references/brief-schema.md) for the authoritative key list.
 
 ## Boundaries

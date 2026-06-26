@@ -55,6 +55,8 @@ assert_match "fallback token estimate is explicit" "$LOOP" \
     'ceil\(words \* 4 / 3\)'
 assert_match "missing source capability forbids a brief" "$SKILL" \
     'Do not emit a Research Brief'
+assert_match "unsupported recommendation fails closed" "$LOOP" \
+    'inconclusive research failure'
 assert_match "opened evidence is mandatory" "$SCHEMA" \
     '\| `evidence` .*never empty'
 assert_match "opened sources are mandatory" "$SCHEMA" \
@@ -71,6 +73,10 @@ assert_match "json evidence supports multiple sources" "$SCHEMA" \
     '"sources": \["https://example\.test/a", "https://example\.test/b"\]'
 assert_absent "singular json evidence source is removed" "$SCHEMA" \
     '"source": "url"'
+assert_match "entrypoint json evidence is non-empty" "$SKILL" \
+    '"evidence": \[\{'
+assert_match "top-level json source is absolute" "$SCHEMA" \
+    '"url": "https://example\.test/a"'
 
 if python3 - "$EVALS" <<'PY'
 import json

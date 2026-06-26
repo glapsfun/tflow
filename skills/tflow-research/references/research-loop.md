@@ -65,6 +65,9 @@ Turn the extracted evidence into the decision brief defined in
 list of sources without a `recommendation` has failed. Anything unresolved when
 the pass ends goes under `open_questions`, not into more searching.
 
+If no opened source provides material evidence for a recommendation, report an
+inconclusive research failure instead of emitting a Research Brief.
+
 ## Budget controls
 
 These controls are not optional. Omitting any of them reintroduces the
