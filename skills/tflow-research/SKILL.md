@@ -1,6 +1,6 @@
 ---
 name: tflow-research
-description: Use when a decision needs bounded web research synthesized into a sourced brief — comparing options, choosing an approach, or strengthening an existing idea — across brainstorm, find-idea, and improve-idea modes
+description: Use when a decision needs bounded web research before committing — comparing options, picking an approach, or pressure-testing an existing idea — and the answer must be traceable to opened sources rather than model memory
 license: MIT
 compatibility: Portable Agent Skill source for Claude Code, OpenAI Codex, and runtimes that support SKILL.md with the agent's own web/fetch tools.
 ---
@@ -56,8 +56,26 @@ search, or fetch tools. If no source can be opened, report the missing
 capability and stop. Do not emit a Research Brief, JSON brief, citations, or
 confidence labels, and do not substitute model memory for opened evidence.
 
-## Conservative Defaults
+**Violating the letter of this rule is violating its spirit.** A brief built
+from memory with a disclaimer is still a forbidden brief. When sources cannot be
+opened, the only correct output is a short capability report naming what is
+missing.
 
+| Rationalization | Reality |
+|-----------------|---------|
+| "I'll answer from training knowledge and just flag it's unverified." | A disclaimed brief is still a brief built on memory. Report the missing capability and stop. |
+| "I'll list URLs as starting points the user can check." | URLs recalled from memory are fabricated citations — the exact failure this rule forbids. Cite only sources opened this pass. |
+| "A recommendation with caveats is more useful than nothing." | This rule is fail-closed. The useful answer is naming the missing capability so it can be fixed, not a sourced-looking guess. |
+
+Red flags — STOP and emit only a capability report:
+
+- About to write a `recommendation` with no opened source behind it.
+- About to print a URL that was not opened this pass.
+- Reaching for an "as of my knowledge" or "not fetched live" disclaimer.
+
+## Modes and Defaults
+
+Each mode sets what the pass optimizes for and a conservative default budget.
 Defaults are deliberately small so a research pass never expands unboundedly by
 accident. Callers must explicitly raise `depth`, `breadth`, or `token_budget`
 for a larger run.
@@ -68,21 +86,9 @@ for a larger run.
 | `find-idea` | Pick a recommended approach from candidates | A clear `recommendation` backed by compared `options` | 2 | 4 | 16,000 |
 | `improve-idea` | Strengthen one existing idea | Deep `evidence` and `risks` for the current direction | 2 | 3 | 16,000 |
 
-Larger numbers are opt-in, never the default. See the
+Larger numbers are opt-in, never the default. The `Goal` and `Output emphasis`
+columns above are the authoritative definition of each mode. See the
 [research loop](references/research-loop.md) for accounting and escalation.
-
-## Modes
-
-- **brainstorm** — the topic is open and the goal is to widen the field. Favor
-  surveying many candidate directions over deeply vetting one. The brief should
-  surface several `options` and the questions that would decide between them.
-- **find-idea** — the goal is a decision. Compare candidate approaches against
-  the topic and converge on a single `recommendation`, with `evidence` and
-  `risks` that justify the choice over the alternatives.
-- **improve-idea** — one idea already exists and the goal is to make it
-  stronger. Concentrate the budget on `evidence` for and against the current
-  direction, the `risks` it carries, and the concrete refinements that address
-  them.
 
 ## The Research Loop
 
