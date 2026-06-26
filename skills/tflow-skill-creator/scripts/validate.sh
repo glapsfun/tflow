@@ -13,14 +13,38 @@
 #   - shellcheck is optional; if absent a WARN is emitted and overall result can still PASS (D-06).
 set -eu
 
+usage() {
+    printf 'Usage: sh validate.sh [--quiet|-q] [<skill-dir>]\n' >&2
+}
+
 QUIET=0
+QUIET_SET=0
 TARGET_DIR="."
+TARGET_SET=0
 
 for arg in "$@"; do
     case "$arg" in
-        --quiet|-q) QUIET=1 ;;
-        -*) printf 'ERROR: unknown option: %s\n' "$arg" >&2; exit 2 ;;
-        *)  TARGET_DIR="$arg" ;;
+        --quiet|-q)
+            if [ "$QUIET_SET" -eq 1 ]; then
+                usage
+                exit 2
+            fi
+            QUIET=1
+            QUIET_SET=1
+            ;;
+        -*)
+            printf 'ERROR: unknown option: %s\n' "$arg" >&2
+            usage
+            exit 2
+            ;;
+        *)
+            if [ "$TARGET_SET" -eq 1 ]; then
+                usage
+                exit 2
+            fi
+            TARGET_DIR="$arg"
+            TARGET_SET=1
+            ;;
     esac
 done
 
@@ -42,21 +66,135 @@ if [ ! -f "$SKILL_MD" ]; then
     exit 1
 fi
 
-# ── Frontmatter extraction (Pattern 1) ────────────────────────────────────────
-FRONTMATTER=$(awk '/^---$/{f++; next} f==1{print}' "$SKILL_MD")
-NAME=$(printf '%s' "$FRONTMATTER" | grep '^name:' | sed 's/^name:[[:space:]]*//')
-DESC=$(printf '%s' "$FRONTMATTER" | grep '^description:' | sed 's/^description:[[:space:]]*//')
+# ── Frontmatter extraction (strict tflow YAML subset) ─────────────────────────
+if PARSED=$(awk '
+function fail(message) {
+    print message
+    failed = 1
+    exit 1
+}
+function trim(value) {
+    sub(/^[[:space:]]+/, "", value)
+    sub(/[[:space:]]+$/, "", value)
+    return value
+}
+function scalar(value, field, first, last, inner, lower) {
+    value = trim(value)
+    if (value == "") {
+        fail(field " must be a non-empty string")
+    }
 
-# Guard empty NAME
-if [ -z "$NAME" ]; then
-    emit FAIL "name-missing (spec): no 'name:' field in frontmatter"
-    FAIL=1
-fi
+    first = substr(value, 1, 1)
+    last = substr(value, length(value), 1)
+    if (first == "\"" || first == "\047") {
+        if (length(value) < 2 || last != first) {
+            fail(field " has an unterminated quoted string")
+        }
+        inner = substr(value, 2, length(value) - 2)
+        if (index(inner, first) || index(inner, "\\")) {
+            fail(field " uses unsupported quoted-string escaping")
+        }
+        return inner
+    }
 
-# Guard empty DESC
-if [ -z "$DESC" ]; then
-    emit FAIL "desc-missing (spec): no 'description:' field in frontmatter"
-    FAIL=1
+    if (index(value, ": ") || value ~ /[[:space:]]#/) {
+        fail(field " uses unsupported unquoted YAML syntax")
+    }
+    if (first == "[" || first == "{" || first == "&" || first == "*" ||
+        first == "!" || first == "|" || first == ">" || first == "@" ||
+        first == "`") {
+        fail(field " uses an unsupported YAML construct")
+    }
+    lower = tolower(value)
+    if (lower ~ /^(true|false|null|~)$/ ||
+        value ~ /^[-+]?[0-9]+([.][0-9]+)?$/) {
+        fail(field " must be a string")
+    }
+    return value
+}
+BEGIN {
+    opened = 0
+    closed = 0
+    parent = ""
+}
+NR == 1 {
+    if ($0 != "---") {
+        fail("frontmatter must start with --- on line 1")
+    }
+    opened = 1
+    next
+}
+opened && !closed {
+    if ($0 == "---") {
+        closed = 1
+        next
+    }
+    if ($0 == "") {
+        next
+    }
+    if ($0 ~ /^[[:space:]]/) {
+        if (parent != "metadata" ||
+            $0 !~ /^  [A-Za-z0-9_.-]+:[[:space:]]*/) {
+            fail("invalid frontmatter indentation or mapping")
+        }
+        line = substr($0, 3)
+        separator = index(line, ":")
+        key = substr(line, 1, separator - 1)
+        if (metadata_seen[key]++) {
+            fail("duplicate metadata key: " key)
+        }
+        value = substr(line, separator + 1)
+        scalar(value, "metadata." key)
+        next
+    }
+
+    parent = ""
+    if ($0 !~ /^[a-z][a-z0-9-]*:[[:space:]]*/) {
+        fail("invalid top-level frontmatter syntax")
+    }
+    separator = index($0, ":")
+    key = substr($0, 1, separator - 1)
+    value = substr($0, separator + 1)
+    if (key !~ /^(name|description|license|compatibility|metadata)$/) {
+        fail("unknown top-level field: " key)
+    }
+    if (field_seen[key]++) {
+        fail("duplicate top-level field: " key)
+    }
+    if (key == "metadata") {
+        if (trim(value) != "") {
+            fail("metadata must be an indented mapping")
+        }
+        parent = "metadata"
+        next
+    }
+    values[key] = scalar(value, key)
+    next
+}
+END {
+    if (failed) {
+        exit 1
+    }
+    if (!closed) {
+        fail("frontmatter closing delimiter is missing")
+    }
+    if (!field_seen["name"]) {
+        fail("required field name is missing")
+    }
+    if (!field_seen["description"]) {
+        fail("required field description is missing")
+    }
+    print "name\t" values["name"]
+    print "description\t" values["description"]
+}
+' "$SKILL_MD"); then
+    NAME=$(printf '%s\n' "$PARSED" | awk -F '\t' \
+        '$1 == "name" { print substr($0, 6) }')
+    DESC=$(printf '%s\n' "$PARSED" | awk -F '\t' \
+        '$1 == "description" { print substr($0, 13) }')
+else
+    emit FAIL "frontmatter-subset (tflow): $PARSED"
+    exit 1
 fi
 
 # ── Rule Set A: Name rules (spec) ─────────────────────────────────────────────
@@ -133,7 +271,8 @@ fi
 # ── Rule Set A: Body rules (spec) ─────────────────────────────────────────────
 
 # R-BODY-LINES (CREATE-03)
-BODY_LINES=$(awk '/^---$/{f++; next} f>=2{print}' "$SKILL_MD" | wc -l | tr -d ' ')
+BODY_LINES=$(awk 'f < 2 && /^---$/{f++; next} f >= 2{print}' "$SKILL_MD" \
+    | wc -l | tr -d ' ')
 if [ "$BODY_LINES" -ge 500 ]; then
     emit FAIL "body-lines (spec): $BODY_LINES lines (must be < 500)"
 else
@@ -144,7 +283,7 @@ fi
 
 # R-AT-LOAD — detect @-prefixed path references in body
 # The || true guard is MANDATORY: grep -c exits 1 on zero matches; set -e would abort without it
-AT_COUNT=$(awk '/^---$/{f++; next} f>=2{print}' "$SKILL_MD" \
+AT_COUNT=$(awk 'f < 2 && /^---$/{f++; next} f >= 2{print}' "$SKILL_MD" \
     | grep -cE '(^|[^a-zA-Z0-9_])@([a-zA-Z$~][a-zA-Z0-9_-]*/|\.\.?/|/[a-zA-Z])' \
     || true)
 if [ "$AT_COUNT" -gt 0 ]; then
@@ -153,7 +292,23 @@ else
     emit PASS "at-force-load"
 fi
 
-# ── Rule Set D: Dev-tool gate (D-06) ──────────────────────────────────────────
+# ── Rule Set D: Source-tree and dev-tool gates ────────────────────────────────
+
+SYMLINK=$(find "$TARGET_DIR" -type l -print -quit 2>/dev/null || true)
+if [ -n "$SYMLINK" ]; then
+    emit FAIL "symlink-free (tflow): symbolic link found: $SYMLINK"
+else
+    emit PASS "symlink-free"
+fi
+
+for script in "$TARGET_DIR/scripts"/*.sh; do
+    [ -f "$script" ] || continue
+    if sh -n "$script"; then
+        emit PASS "sh-syntax: $(basename "$script")"
+    else
+        emit FAIL "sh-syntax: $(basename "$script")"
+    fi
+done
 
 # R-SHELLCHECK — optional; WARN if absent (D-06), FAIL if present and non-zero
 if command -v shellcheck >/dev/null 2>&1; then
