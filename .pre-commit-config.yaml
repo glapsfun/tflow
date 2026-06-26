@@ -1,0 +1,33 @@
+---
+# Run: pre-commit install        (one-time, sets up the git hook)
+#      pre-commit run --all-files (lint everything now)
+repos:
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        # --shell=sh honors the POSIX-sh contract (CLAUDE.md). The excludes waive
+        # three known, low-severity findings in the existing skill scripts that are
+        # intentional/guarded: SC2115 (rm path guarded by validated $SKILL_NAME),
+        # SC2016 (literal `sh ... ` printed in a single-quoted printf format),
+        # SC2329 (cleanup trap invoked indirectly via `trap`).
+        args:
+          - --shell=sh
+          - --exclude=SC2115,SC2016,SC2329
+        files: ^skills/.*/scripts/.*\.sh$
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        args: [-c, .yamllint]
+
+  - repo: local
+    hooks:
+      - id: skill-self-tests
+        name: skill-creator self-test suite
+        entry: sh skills/tflow-skill-creator/scripts/run-tests.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^skills/.*\.(sh|md)$
