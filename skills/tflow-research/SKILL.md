@@ -1,6 +1,6 @@
 ---
 name: tflow-research
-description: Use when a decision needs bounded web research synthesized into a sourced brief across brainstorm, find-idea, and improve-idea modes
+description: Use when a decision needs bounded web research synthesized into a sourced brief — comparing options, choosing an approach, or strengthening an existing idea — across brainstorm, find-idea, and improve-idea modes
 license: MIT
 compatibility: Portable Agent Skill source for Claude Code, OpenAI Codex, and runtimes that support SKILL.md with the agent's own web/fetch tools.
 ---
@@ -41,10 +41,10 @@ A research request requires one input and accepts five optional controls.
   budget for the whole pass. The agent starts synthesis at 80% and stops reading
   at 100%.
 
-`depth`, `breadth`, and `token_budget` are the cost controls. They satisfy the
-budget requirement (RSCH-03, RSCH-04) and prevent the unbounded recursion
-failure mode. See the [research loop](references/research-loop.md) for how the
-agent applies the visited set, URL cap, and stopping rules.
+`depth`, `breadth`, and `token_budget` are the cost controls. They keep the
+budget bounded and prevent the unbounded recursion failure mode. See the
+[research loop](references/research-loop.md) for how the agent applies the
+visited set, URL cap, and stopping rules.
 
 ## Preflight and Failure
 
@@ -68,8 +68,7 @@ for a larger run.
 | `find-idea` | Pick a recommended approach from candidates | A clear `recommendation` backed by compared `options` | 2 | 4 | 16,000 |
 | `improve-idea` | Strengthen one existing idea | Deep `evidence` and `risks` for the current direction | 2 | 3 | 16,000 |
 
-Reject zero, negative, or non-numeric budgets before research begins. Larger
-numbers are opt-in, never the default. See the
+Larger numbers are opt-in, never the default. See the
 [research loop](references/research-loop.md) for accounting and escalation.
 
 ## Modes
@@ -103,9 +102,6 @@ threshold, is in [research loop](references/research-loop.md).
    this step when the token budget is nearly spent, even if some questions
    remain open; record those under `open_questions`.
 
-This phased loop with recursive link following and forced synthesis satisfies
-RSCH-01 and RSCH-04.
-
 ## Source Discipline
 
 Prefer primary and authoritative sources, check freshness for facts that change
@@ -133,7 +129,6 @@ Every emitted brief must contain at least one material `evidence` entry and one
 corresponding opened source. If opened sources cannot support a recommendation,
 report an inconclusive research failure instead of emitting a brief.
 
-These mandatory fields satisfy RSCH-05 and the decision-brief decision (D-16).
 The exact markdown headings and field meanings are in
 [brief schema](references/brief-schema.md).
 
@@ -166,8 +161,7 @@ a JSON object that mirrors the markdown brief exactly:
 Empty arrays are valid only for `options`, `risks`, and `open_questions`.
 `evidence` and `sources` must contain at least one entry. The JSON keys must
 match the markdown fields one for one, including `risks` and `open_questions`.
-This optional JSON mirror satisfies RSCH-06 and the JSON decision (D-17). See
-[brief schema](references/brief-schema.md) for the authoritative key list.
+See [brief schema](references/brief-schema.md) for the authoritative key list.
 
 ## Boundaries
 

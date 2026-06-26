@@ -38,7 +38,7 @@ assert_absent() {
 }
 
 assert_match "invocation counts five optional controls" "$SKILL" \
-    'accepts five optional controls'
+    'five .*optional controls'
 assert_match "brainstorm has numeric token budget" "$SKILL" \
     '\| `brainstorm` .*\| 8,000 \|'
 assert_match "find-idea has numeric token budget" "$SKILL" \
@@ -87,6 +87,8 @@ with open(path, encoding="utf-8") as handle:
     payload = json.load(handle)
 
 expected = {
+    "happy-path-find-idea",
+    "happy-path-brainstorm",
     "no-web-tools",
     "prompt-injection-source",
     "budget-threshold",

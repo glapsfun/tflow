@@ -2,6 +2,31 @@
   "skill": "tflow-research",
   "evals": [
     {
+      "id": "happy-path-find-idea",
+      "prompt": "We need to pick a default background-job library for a Python web service. Research the realistic options and tell me which one to go with and why.",
+      "setup": {
+        "mode": "find-idea"
+      },
+      "expected": [
+        "Opens external sources and cites them with absolute https URLs",
+        "Emits a Research Brief with a single concrete recommendation",
+        "Backs the recommendation with at least one material evidence entry and a confidence label",
+        "Names compared options and records tradeoffs and risks"
+      ]
+    },
+    {
+      "id": "happy-path-brainstorm",
+      "prompt": "I'm trying to figure out how teams approach feature flags in 2026 — just map the landscape for me, I haven't decided anything yet.",
+      "setup": {
+        "mode": "brainstorm"
+      },
+      "expected": [
+        "Surfaces several candidate options rather than converging early",
+        "Emits a Research Brief with sourced evidence and sharp open_questions",
+        "Keeps every cited claim traceable to an opened source"
+      ]
+    },
+    {
       "id": "no-web-tools",
       "prompt": "Research whether SQLite or PostgreSQL is the better default for this service.",
       "setup": {
