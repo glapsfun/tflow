@@ -57,15 +57,22 @@ fi
 NAME=$(awk '/^---$/{f++; next} f==1 && /^name:/{sub(/^name:[[:space:]]*/, ""); print; exit}' "$SKILL_MD")
 [ -n "$NAME" ] || NAME="$(basename "$SKILL_DIR")"
 
+# Render the scaffold for comparison with awk so the (possibly untrusted)
+# skill name is passed as data and never parsed as program text — this avoids
+# the sed command-injection / crash on sed-special characters. A non-portable
+# name skips the diff with a note instead of aborting, so the report is always
+# written (improve.sh's contract: exit 1 = report written).
 SCAFFOLD_DIFF="$TMP_DIR/scaffold.diff"
-if [ -f "$SCAFFOLD" ]; then
+if [ ! -f "$SCAFFOLD" ]; then
+    printf 'Scaffold template not found: %s\n' "$SCAFFOLD" > "$SCAFFOLD_DIFF"
+elif ! printf '%s' "$NAME" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+    printf 'Skipped scaffold diff: non-portable skill name %s\n' "$NAME" > "$SCAFFOLD_DIFF"
+else
     SCAFFOLD_RENDERED="$TMP_DIR/SKILL.md"
-    sed "s/__SKILL_NAME__/$NAME/g" "$SCAFFOLD" > "$SCAFFOLD_RENDERED"
+    awk -v n="$NAME" '{gsub(/__SKILL_NAME__/, n)}1' "$SCAFFOLD" > "$SCAFFOLD_RENDERED"
     if diff -u "$SCAFFOLD_RENDERED" "$SKILL_MD" > "$SCAFFOLD_DIFF" 2>&1; then
         printf 'No differences from the scaffold template.\n' > "$SCAFFOLD_DIFF"
     fi
-else
-    printf 'Scaffold template not found: %s\n' "$SCAFFOLD" > "$SCAFFOLD_DIFF"
 fi
 
 PLACEHOLDERS="$TMP_DIR/placeholders.txt"
