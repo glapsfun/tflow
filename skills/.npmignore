@@ -1,0 +1,4 @@
+# Defensive: prune runtime-generated artifacts that package.sh / improve.sh
+# would create if run inside the repo. Keeps fixtures/ shipped.
+dist/
+.skill-improvement.md
