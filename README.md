@@ -30,8 +30,11 @@ sh skills/tflow-skill-creator/scripts/validate.sh --quiet <skill-dir>   # suppre
 # Run the full self-test suite (runs validate.sh against every fixture)
 sh skills/tflow-skill-creator/scripts/run-tests.sh
 
-# Lint the scripts themselves — must be clean with --shell=sh
-shellcheck --shell=sh skills/*/scripts/*.sh
+# Lint the real skill scripts (POSIX sh). The non-recursive glob skips the
+# scripts/fixtures/ tree on purpose — some fixtures are intentionally broken.
+# The excludes mirror the pre-commit gate: SC2115/SC2016/SC2329 are intentional
+# and guarded. No shellcheck on PATH? `pre-commit run shellcheck` vendors one.
+shellcheck --shell=sh --exclude=SC2115,SC2016,SC2329 skills/*/scripts/*.sh
 ```
 
 ## Repo layout
@@ -58,7 +61,8 @@ Contributions run through a three-check gate, enforced identically by the local
 `pre-commit` hook and by GitHub Actions CI (`.github/workflows/ci.yml`) on every push to
 `main` and every pull request:
 
-1. **shellcheck** (`--shell=sh`) on the skill scripts.
+1. **shellcheck** (`--shell=sh`) on the skill scripts, with `scripts/fixtures/`
+   excluded so intentionally-broken fixtures don't fail the lint.
 2. The **skill self-test suite** (`run-tests.sh`).
 3. **yamllint** on the project's YAML.
 

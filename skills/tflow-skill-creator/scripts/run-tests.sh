@@ -201,12 +201,37 @@ run_script_contract_tests() {
     ln -s "$TMP_ROOT/outside.txt" "$SYMLINK_DIR/external-link"
     run_cmd_test "validate rejects symlink" 1 sh "$VALIDATE" "$SYMLINK_DIR"
 
+    # name-dir-match must resolve the target to a real directory name so a
+    # `.` argument (or the bare default) run from inside a skill dir compares
+    # against the actual basename, not "." (basename of ".").
+    DOT_DIR="$TMP_ROOT/pass-well-formed"
+    cp -R "$FIXTURES/pass-well-formed" "$DOT_DIR"
+    if (cd "$DOT_DIR" && sh "$VALIDATE" . >/dev/null 2>&1); then
+        pass "validate accepts dot invocation from skill dir"
+    else
+        fail "validate accepts dot invocation from skill dir" "exit non-zero"
+    fi
+    if (cd "$DOT_DIR" && sh "$VALIDATE" >/dev/null 2>&1); then
+        pass "validate accepts bare invocation from skill dir"
+    else
+        fail "validate accepts bare invocation from skill dir" "exit non-zero"
+    fi
+
     run_cmd_test "improve writes report" 0 sh "$IMPROVE" "$INIT_ROOT/skills/valid-skill"
     assert_file "improve report exists" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
     assert_grep "improve report has validation status" "Validation" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
     assert_grep "improve report has scaffold comparison" "Scaffold Comparison" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
     assert_grep "improve report has placeholder checks" "Placeholder" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
     assert_grep "improve report has testing checklist" "Testing Checklist" "$INIT_ROOT/skills/valid-skill/.skill-improvement.md"
+
+    # improve.sh must strip a quoted `name:` the same way validate.sh does, so a
+    # quoted-name skill still gets a real scaffold diff instead of the
+    # non-portable-name skip.
+    QUOTED_DIR="$TMP_ROOT/pass-quoted-scalars"
+    cp -R "$FIXTURES/pass-quoted-scalars" "$QUOTED_DIR"
+    sh "$IMPROVE" "$QUOTED_DIR" >/dev/null 2>&1 || true
+    assert_not_grep "improve resolves quoted skill name" \
+        'non-portable skill name' "$QUOTED_DIR/.skill-improvement.md"
 
     run_cmd_test "package refuses unchecked evidence" 1 sh "$PACKAGE" "$INIT_ROOT/skills/valid-skill"
     sed '/^- \[[ x]\]/d' \

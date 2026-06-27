@@ -1,6 +1,6 @@
 ---
 name: tflow-skill-creator
-description: Use when a portable Agent Skill needs a disciplined factory pass from intent to distributable evidence
+description: Use when authoring or hardening a portable Agent Skill (a SKILL.md plus its scripts and references) that must stay valid and distributable across Claude Code and Codex skill directories
 license: MIT
 compatibility: Portable Agent Skill source for Claude Code, OpenAI Codex, and runtimes that support SKILL.md with POSIX sh scripts.
 ---

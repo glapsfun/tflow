@@ -15,6 +15,12 @@ repos:
           - --shell=sh
           - --exclude=SC2115,SC2016,SC2329
         files: ^skills/.*/scripts/.*\.sh$
+        # Fixtures under scripts/fixtures/ are test data, not source scripts. Some
+        # (fail-script-syntax/scripts/broken.sh) are intentionally unparseable to
+        # prove validate.sh's sh -n gate rejects them — those parse errors
+        # (SC1072/SC1073) can't be waived inline, so exclude the fixture tree here.
+        # validate.sh still lints fixture scripts when run-tests.sh exercises them.
+        exclude: ^skills/.*/scripts/fixtures/
 
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.38.0

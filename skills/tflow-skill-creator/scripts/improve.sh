@@ -54,7 +54,18 @@ else
     VALIDATION_EXIT=1
 fi
 
-NAME=$(awk '/^---$/{f++; next} f==1 && /^name:/{sub(/^name:[[:space:]]*/, ""); print; exit}' "$SKILL_MD")
+# Strip surrounding quotes so a quoted `name: "foo"` (which validate.sh accepts)
+# resolves to the same kebab name here and still gets a scaffold diff instead of
+# being skipped as non-portable.
+NAME=$(awk '/^---$/{f++; next} f==1 && /^name:/{
+    sub(/^name:[[:space:]]*/, "")
+    sub(/[[:space:]]+$/, "")
+    q = substr($0, 1, 1)
+    if ((q == "\"" || q == "\047") && substr($0, length($0), 1) == q) {
+        $0 = substr($0, 2, length($0) - 2)
+    }
+    print; exit
+}' "$SKILL_MD")
 [ -n "$NAME" ] || NAME="$(basename "$SKILL_DIR")"
 
 # Render the scaffold for comparison with awk so the (possibly untrusted)

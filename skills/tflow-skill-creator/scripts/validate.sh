@@ -218,7 +218,12 @@ if [ -n "$NAME" ]; then
     fi
 
     # R-NAME-DIR
-    DIR_NAME=$(basename "$TARGET_DIR")
+    # Resolve the target to a real directory name first. Without this a `.`
+    # argument (or the bare default, which is ".") run from inside a skill dir
+    # would compare against basename "." = "." and spuriously fail the match.
+    # The preflight already guaranteed $TARGET_DIR holds a SKILL.md, so the cd
+    # cannot fail here. (improve.sh resolves SKILL_DIR the same way.)
+    DIR_NAME=$(basename "$(cd "$TARGET_DIR" && pwd)")
     if [ "$NAME" = "$DIR_NAME" ]; then
         emit PASS "name-dir-match"
     else
@@ -260,7 +265,7 @@ if [ -n "$DESC" ]; then
     # teaches trigger-condition phrasing ("Use when an observable trigger
     # condition applies") as the recommended description style, so the validator
     # must not reject the wording it recommends.
-    VERB_PATTERN='dispatch(es|ing)?|run(s|ning)?|execut(es|ing|e)?|creat(es|ing|e)?|generat(es|ing|e)?|build(s|ing)?|process(es|ing)?|scaffold(s|ing)?|lint(s|ing)?|loop(s|ing)?|packag(es|ing|e)?|install(s|ing)?|call(s|ing)?|invok(es|ing|e)?|produc(es|ing|e)?|output(s|ing)?|emit(s|ting)?|format(s|ing)?|validat(es|ing|e)?|deploy(s|ing)?'
+    VERB_PATTERN='dispatch(es|ing)?|run(s|ning)?|execut(es|ing|e)?|creat(es|ing|e)?|generat(es|ing|e)?|build(s|ing)?|process(es|ing)?|scaffold(s|ing)?|lint(s|ing)?|loop(s|ing)?|packag(es|ing|e)?|install(s|ing)?|call(s|ing)?|invok(es|ing|e)?|produc(es|ing|e)?|output(s|ting|ing)?|emit(s|ting)?|format(s|ting|ing)?|validat(es|ing|e)?|deploy(s|ing)?'
     if printf '%s' "$DESC" | grep -qiE "(^|[^a-z])($VERB_PATTERN)([^a-z]|$)"; then
         emit FAIL "desc-workflow-verb (tflow): description contains workflow verb (triggers description-as-summary pitfall)"
     else
