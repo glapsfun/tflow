@@ -1,16 +1,18 @@
 ---
 name: tflow-skill-factory
-description: Use when a plain-text Agent Skill idea needs sourced evaluation before it becomes a validated draft
+description: Use when a plain-text Agent Skill idea (no draft yet) needs sourced evaluation before it becomes a validated draft; for an existing draft, use tflow-skill-creator instead
 license: MIT
 compatibility: Requires sibling tflow-research and tflow-skill-creator skills, external web/search/fetch access, and writable temporary or caller-provided scratch storage; otherwise portable across Agent Skills runtimes with POSIX sh.
 ---
 
 # tflow Skill Factory
 
-This skill is a thin orchestrator. It chains [tflow-research](../tflow-research/SKILL.md)
-into [tflow-skill-creator](../tflow-skill-creator/SKILL.md) so a plain-text intent
-becomes a sourced, validated draft. It owns sequencing only — the chained skills
-own research and authoring.
+This skill is a thin orchestrator. It chains the sibling `tflow-research` and
+`tflow-skill-creator` skills so a plain-text intent becomes a sourced, validated
+draft. It owns sequencing only — the chained skills own research and authoring.
+Reach for it when starting from a bare idea; if a draft already exists, use
+`tflow-skill-creator` directly. The siblings are referenced by name (not by
+relative path) because all three install into the same skills namespace.
 
 ## Preflight
 
