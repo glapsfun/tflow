@@ -14,7 +14,10 @@ repos:
         args:
           - --shell=sh
           - --exclude=SC2115,SC2016,SC2329
-        files: ^skills/.*/scripts/.*\.sh$
+        # Cover both scripts/ (source helpers) and tests/ (per-skill suites);
+        # tflow-research and tflow-skill-factory keep their run-tests.sh under
+        # tests/, which the old scripts/-only glob silently skipped.
+        files: ^skills/.*/(scripts|tests)/.*\.sh$
         # Fixtures under scripts/fixtures/ are test data, not source scripts. Some
         # (fail-script-syntax/scripts/broken.sh) are intentionally unparseable to
         # prove validate.sh's sh -n gate rejects them — those parse errors
@@ -31,8 +34,16 @@ repos:
   - repo: local
     hooks:
       - id: skill-self-tests
-        name: skill-creator self-test suite
-        entry: sh skills/tflow-skill-creator/scripts/run-tests.sh
+        name: skill self-test suites (research, creator, factory)
+        # Run every skill's suite, not just the creator's — otherwise a
+        # regression in tflow-research or tflow-skill-factory ships unseen.
+        # Each run-tests.sh self-locates via dirname, so cwd is irrelevant.
+        entry: >-
+          sh -c 'for t in
+          skills/tflow-research/tests/run-tests.sh
+          skills/tflow-skill-creator/scripts/run-tests.sh
+          skills/tflow-skill-factory/tests/run-tests.sh;
+          do printf "\n== %s ==\n" "$t"; sh "$t" || exit 1; done'
         language: system
         pass_filenames: false
         always_run: true

@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+# CDPATH= is a one-shot empty assignment scoped to this cd so a user's exported
+# CDPATH can't redirect it or print output; the space is intentional, not a typo.
+# shellcheck disable=SC1007
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 SKILL="$ROOT/SKILL.md"
 EVALS="$ROOT/evals/evals.json"
