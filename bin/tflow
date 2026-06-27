@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+// ESM (package.json "type":"module"). Phase-4 placeholder; Phase-5 fills the body.
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const pkg = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8')
+);
+
+console.log(`tflow ${pkg.version} — installer not yet implemented (filled in Phase 5).`);

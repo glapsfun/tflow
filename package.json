@@ -1,0 +1,39 @@
+{
+  "name": "@glapsfun/tflow",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A factory for authoring Agent Skills to the agentskills.io open standard.",
+  "bin": {
+    "tflow": "bin/tflow"
+  },
+  "files": [
+    "skills",
+    "bin",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/glapsfun/tflow.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "skill",
+    "agentskills",
+    "cli",
+    "claude",
+    "codex"
+  ],
+  "homepage": "https://github.com/glapsfun/tflow#readme",
+  "bugs": {
+    "url": "https://github.com/glapsfun/tflow/issues"
+  }
+}
