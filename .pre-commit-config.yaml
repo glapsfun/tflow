@@ -48,7 +48,8 @@ repos:
           skills/tflow-research/tests/run-tests.sh
           skills/tflow-skill-creator/scripts/run-tests.sh
           skills/tflow-skill-factory/tests/run-tests.sh
-          test/run-installer-tests.sh;
+          test/run-installer-tests.sh
+          test/run-stamp-changelog-tests.sh;
           do printf "\n== %s ==\n" "$t"; sh "$t" || exit 1; done'
         language: system
         pass_filenames: false
