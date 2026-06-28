@@ -11,8 +11,8 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
-# D-02 least privilege: id-token is wired now but UNUSED until the OIDC flip;
-# contents:write is what gh release create needs. No packages:/pull-requests:.
+# D-02 least privilege: id-token:write powers OIDC trusted publishing (no NPM_TOKEN)
+# and signs provenance; contents:write is what gh release create needs.
 permissions:
   id-token: write
   contents: write
@@ -37,13 +37,18 @@ jobs:
       - name: Install pre-commit
         run: pip install pre-commit
 
-      # registry-url makes setup-node write the .npmrc line that reads
-      # NODE_AUTH_TOKEN; node 22 keeps the tree OIDC-ready for the later flip.
+      # registry-url points npm at the public registry. With OIDC there is no
+      # NODE_AUTH_TOKEN — npm exchanges the GitHub id-token for a short-lived
+      # publish credential at publish time.
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+
+      # OIDC trusted publishing requires npm >= 11.5.1; node 22 ships npm 10.x.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
 
       # REL-03 + REL-05 fail-closed gate (D-04/D-05/D-06/D-08/D-09).
       - name: Precondition gate
@@ -91,14 +96,12 @@ jobs:
       - name: Pack assertion
         run: sh scripts/assert-pack.sh
 
-      # REL-02 / D-01/D-09/D-11: token-auth public publish, suffix-aware dist-tag.
-      # Attestation stays deferred to the OIDC flip; only --access and --tag pass.
+      # REL-02 / D-01/D-09/D-11: OIDC trusted-publisher public publish (no token),
+      # suffix-aware dist-tag. --provenance is signed via the GitHub id-token.
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set +e
-          OUT="$(npm publish --access public --tag "$DIST_TAG" 2>&1)"
+          OUT="$(npm publish --access public --provenance --tag "$DIST_TAG" 2>&1)"
           RC=$?
           set -e
           printf '%s\n' "$OUT"
