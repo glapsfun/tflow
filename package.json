@@ -6,6 +6,9 @@
   "bin": {
     "tflow": "bin/tflow"
   },
+  "scripts": {
+    "version": "sh scripts/stamp-changelog.sh && git add CHANGELOG.md"
+  },
   "files": [
     "skills",
     "bin",

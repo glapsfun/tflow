@@ -14,12 +14,14 @@ repos:
         args:
           - --shell=sh
           - --exclude=SC2115,SC2016,SC2329
-        # Cover both scripts/ (source helpers) and tests/ (per-skill suites);
-        # tflow-research and tflow-skill-factory keep their run-tests.sh under
-        # tests/, which the old scripts/-only glob silently skipped. The
-        # top-level test/ dir holds the installer E2E test (run-installer-tests.sh)
-        # and is added here so it is linted --shell=sh like every other script.
-        files: ^(skills/.*/(scripts|tests)|test)/.*\.sh$
+        # Cover repo-root scripts/ (stamp-changelog.sh, assert-pack.sh), the
+        # per-skill scripts/ + tests/ suites, and the top-level test/ dir. The
+        # repo-root scripts/ branch was previously uncovered, so the release
+        # helpers escaped the lint gate; tflow-research and tflow-skill-factory
+        # keep their run-tests.sh under tests/, which the old scripts/-only glob
+        # silently skipped; test/ holds the installer + stamp E2E tests. All are
+        # now linted --shell=sh like every other script.
+        files: ^(scripts|skills/.*/(scripts|tests)|test)/.*\.sh$
         # Fixtures under scripts/fixtures/ are test data, not source scripts. Some
         # (fail-script-syntax/scripts/broken.sh) are intentionally unparseable to
         # prove validate.sh's sh -n gate rejects them — those parse errors
