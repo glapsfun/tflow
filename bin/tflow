@@ -3,11 +3,13 @@
 // payload into Claude/Codex runtime skill dirs with a sha256 no-clobber manifest.
 import {
   copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync,
+  rmSync, rmdirSync,
 } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { parseArgs } from 'node:util';
 import { homedir } from 'node:os';
-import { dirname, join, relative, basename, sep } from 'node:path';
+import { dirname, join, relative, resolve, basename, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // ── Package-root + payload resolution (generalizes the Phase-4 stub) ──────────
@@ -124,6 +126,90 @@ function installRuntime(runtime, targetRoot, scope, values) {
   writeFileSync(manifestPath, `${JSON.stringify(out, null, 2)}\n`);
 }
 
+// Remove now-empty installer-created dirs bottom-up, confined under stopRoot.
+function pruneEmptyDirs(dirs, stopRoot) {
+  const all = new Set();
+  for (let d of dirs) {
+    while (d && d !== stopRoot && d.startsWith(stopRoot + sep)) {
+      all.add(d);
+      d = dirname(d);
+    }
+  }
+  for (const d of [...all].sort((a, b) => b.length - a.length)) {
+    try {
+      if (existsSync(d) && readdirSync(d).length === 0) rmdirSync(d);
+    } catch {
+      /* not empty or already gone — leave it */
+    }
+  }
+}
+
+// --uninstall (D-07): remove only manifest-matching pristine files; preserve
+// user-modified ones; then prune the manifest + empty installer-created dirs.
+function uninstallRuntime(runtime, targetRoot) {
+  const manifestPath = join(targetRoot, '.tflow', 'install-manifest.json');
+  console.log(`\n[${runtime}] uninstall → ${targetRoot}`);
+  if (!existsSync(manifestPath)) {
+    console.error(`  WARN: no install manifest at ${manifestPath} — nothing to uninstall.`);
+    return;
+  }
+  const manifest = readManifest(manifestPath);
+  const touchedDirs = new Set();
+  let removed = 0;
+  let preserved = 0;
+  let missing = 0;
+
+  for (const [key, recordedSha] of Object.entries(manifest.files)) {
+    // Security V12: confine each manifest key under targetRoot — reject `..` escapes.
+    const file = resolve(targetRoot, ...key.split('/'));
+    if (file !== targetRoot && !file.startsWith(targetRoot + sep)) {
+      console.error(`  reject ${key} (resolves outside target root)`);
+      continue;
+    }
+    if (!existsSync(file)) {
+      console.log(`  missing ${key}`);
+      missing++;
+    } else if (sha256(file) === recordedSha) {
+      rmSync(file);
+      touchedDirs.add(dirname(file));
+      console.log(`  removed ${key}`);
+      removed++;
+    } else {
+      console.log(`  preserved(modified) ${key}`);
+      preserved++;
+    }
+  }
+
+  rmSync(manifestPath, { force: true });
+  touchedDirs.add(dirname(manifestPath));
+  touchedDirs.add(join(targetRoot, 'skills'));
+  pruneEmptyDirs(touchedDirs, targetRoot);
+  console.log(`  → ${removed} removed, ${preserved} preserved, ${missing} missing`);
+}
+
+// Advisory validate.sh self-check (D-08/D-09): run the INSTALLED creator
+// validator against each installed real skill. sh missing → skip with a warning;
+// any FAIL is advisory only — the install still exits 0.
+function selfCheck(runtime, targetRoot) {
+  const skillsDest = join(targetRoot, 'skills');
+  const validate = join(skillsDest, 'tflow-skill-creator', 'scripts', 'validate.sh');
+  if (spawnSync('sh', ['-c', 'exit 0']).error?.code === 'ENOENT') {
+    console.error('WARN: POSIX sh unavailable — skipping validate.sh self-check.');
+    return;
+  }
+  if (!existsSync(validate)) {
+    console.error('WARN: validate.sh not present in install — skipping self-check.');
+    return;
+  }
+  console.log(`[${runtime}] validate.sh self-check:`);
+  for (const name of REAL_SKILLS) {
+    const skillDir = join(skillsDest, name);
+    if (!existsSync(skillDir)) continue;
+    const r = spawnSync('sh', [validate, skillDir], { encoding: 'utf8' }); // argv array — no shell
+    console.log(`  ${r.status === 0 ? 'PASS' : 'FAIL'} ${name}`);
+  }
+}
+
 function main() {
   let parsed;
   try {
@@ -160,9 +246,14 @@ function main() {
 
   for (const r of runtimes) {
     const targetRoot = join(base, `.${r}`);
-    installRuntime(r, targetRoot, scope, values);
+    if (values.uninstall) {
+      uninstallRuntime(r, targetRoot);
+    } else {
+      installRuntime(r, targetRoot, scope, values);
+      if (!values['dry-run']) selfCheck(r, targetRoot); // advisory; never changes exit code
+    }
   }
-  process.exit(0);
+  process.exit(0); // self-check FAIL is advisory (D-08) — always exit 0
 }
 
 main();
