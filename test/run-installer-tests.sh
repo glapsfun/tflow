@@ -292,6 +292,27 @@ assert_grep "dual auto-detect .claude manifest records runtime claude" \
 assert_grep "dual auto-detect .codex manifest records runtime codex" \
     '"runtime": "codex"' "$PROJ_H/.codex/.tflow/install-manifest.json"
 
+# ── Scenario I: revert-then-uninstall stays cleanable (IN-03) — a file tflow
+#    installed, the user modified (skip(modified)) across a re-run, then reverted
+#    to pristine must still be uninstalled, not left as an orphan. Guards the
+#    carry-forward of the prior recorded sha for skipped-but-present files. ───────
+PROJ_I="$TMP_ROOT/proj-i"
+mkdir -p "$PROJ_I/.claude"
+cli "$PROJ_I" "$TMP_ROOT/i1.log" init --claude
+assert_status "install before revert-then-uninstall" 0
+I_FILE="$PROJ_I/.claude/skills/tflow-research/SKILL.md"
+cp "$I_FILE" "$TMP_ROOT/i-pristine.bak"     # stash the byte-exact pristine copy
+printf '\n%s\n' "$MARK" >> "$I_FILE"        # user modifies → skip(modified)
+cli "$PROJ_I" "$TMP_ROOT/i2.log" init --claude
+assert_status "re-run over the user edit (IN-03)" 0
+assert_grep "modified file reported skip(modified) on re-run" 'skip(modified)' "$TMP_ROOT/i2.log"
+cp "$TMP_ROOT/i-pristine.bak" "$I_FILE"     # user reverts to pristine content
+cli "$PROJ_I" "$TMP_ROOT/i3.log" init --uninstall --claude
+assert_status "uninstall after revert" 0
+assert_grep "reverted file is removed, not orphaned" 'removed skills/tflow-research/SKILL.md' \
+    "$TMP_ROOT/i3.log"
+assert_missing "reverted file is cleaned up by uninstall" "$I_FILE"
+
 # ── Footer ────────────────────────────────────────────────────────────────────
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 if [ "$FAIL" -gt 0 ]; then
