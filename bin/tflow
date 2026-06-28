@@ -1,11 +1,168 @@
 #!/usr/bin/env node
-// ESM (package.json "type":"module"). Phase-4 placeholder; Phase-5 fills the body.
-import { readFileSync } from 'node:fs';
+// ESM (package.json "type":"module"). The tflow installer: copies the skill
+// payload into Claude/Codex runtime skill dirs with a sha256 no-clobber manifest.
+import {
+  copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync,
+} from 'node:fs';
+import { createHash } from 'node:crypto';
+import { parseArgs } from 'node:util';
+import { homedir } from 'node:os';
+import { dirname, join, relative, basename, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 
-const pkg = JSON.parse(
-  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8')
-);
+// ── Package-root + payload resolution (generalizes the Phase-4 stub) ──────────
+// Works under npx, `npm i -g`/`npm link` (bin realpath), and a local checkout.
+const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+const payload = join(pkgRoot, 'skills');
+const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8'));
 
-console.log(`tflow ${pkg.version} — installer not yet implemented (filled in Phase 5).`);
+const REAL_SKILLS = ['tflow-research', 'tflow-skill-creator', 'tflow-skill-factory'];
+
+function usage(msg) {
+  if (msg) console.error(`tflow: ${msg}`);
+  console.error(
+    'Usage: tflow init [--claude] [--codex] [--global] [--dry-run] [--force] [--uninstall]',
+  );
+}
+
+// ── Payload exclusion (D-10) ──────────────────────────────────────────────────
+// The ONLY required prune is scripts/fixtures/. `fail-*` is defensive insurance.
+// `.npmignore`/`.gitignore` are packaging control files that npm strips from the
+// published tarball — exclude them so a local-checkout install matches an npx one
+// and no dev-kit control file lands in a runtime skill dir.
+const isExcluded = (abs) => {
+  if (abs.includes(`${sep}scripts${sep}fixtures`)) return true;
+  const b = basename(abs);
+  if (b.startsWith('fail-')) return true;
+  if (b === '.npmignore' || b === '.gitignore') return true;
+  return false;
+};
+
+// Recursive walk → forward-slash relative paths (stable manifest keys across OSes).
+function walk(root, dir = root, out = []) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const abs = join(dir, e.name);
+    if (isExcluded(abs)) continue;
+    if (e.isDirectory()) walk(root, abs, out);
+    else if (e.isFile()) out.push(relative(root, abs).split(sep).join('/'));
+  }
+  return out;
+}
+
+// sha256 of RAW BYTES — content-only (exec bit / newlines don't affect it).
+const sha256 = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
+
+function readManifest(manifestPath) {
+  if (!existsSync(manifestPath)) return { files: {} };
+  try {
+    const m = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    return m && typeof m === 'object' && m.files ? m : { files: {} };
+  } catch {
+    return { files: {} };
+  }
+}
+
+// Explicit --claude/--codex win (D-02). Bare init auto-detects existing runtime
+// dirs under base; never auto-creates one (D-01).
+function resolveRuntimes(values, base) {
+  const explicit = [];
+  if (values.claude) explicit.push('claude');
+  if (values.codex) explicit.push('codex');
+  if (explicit.length) return explicit;
+  return ['claude', 'codex'].filter((r) => existsSync(join(base, `.${r}`)));
+}
+
+function installRuntime(runtime, targetRoot, scope, values) {
+  const skillsDest = join(targetRoot, 'skills');
+  const manifestPath = join(targetRoot, '.tflow', 'install-manifest.json');
+  const manifest = readManifest(manifestPath);
+  const rels = walk(payload);
+  const newFiles = {};
+  let created = 0;
+  let overwritten = 0;
+  let skipped = 0;
+
+  console.log(`\n[${runtime}] ${values['dry-run'] ? 'dry-run ' : ''}install → ${targetRoot}`);
+  for (const rel of rels) {
+    const src = join(payload, ...rel.split('/'));
+    const dest = join(skillsDest, ...rel.split('/'));
+    const key = `skills/${rel}`;
+    newFiles[key] = sha256(src); // manifest records the shipped version
+
+    let action;
+    if (!existsSync(dest)) {
+      action = 'create';
+    } else {
+      const recorded = manifest.files[key];
+      const instSha = sha256(dest);
+      if (recorded && instSha === recorded) action = 'overwrite'; // pristine refresh (D-03)
+      else action = values.force ? 'overwrite' : 'skip'; // user-modified (D-03/D-04)
+    }
+
+    if (action === 'create') created++;
+    else if (action === 'overwrite') overwritten++;
+    else skipped++;
+    console.log(`  ${action === 'skip' ? 'skip(modified)' : action} ${key}`);
+
+    if (values['dry-run'] || action === 'skip') continue;
+    mkdirSync(dirname(dest), { recursive: true });
+    copyFileSync(src, dest); // byte-exact, mode-preserving
+  }
+  console.log(`  → ${created} created, ${overwritten} overwritten, ${skipped} skipped`);
+
+  if (values['dry-run']) return; // D-05: write nothing
+
+  const out = {
+    name: pkg.name,
+    version: pkg.version,
+    runtime,
+    scope,
+    installedAt: new Date().toISOString(),
+    files: newFiles,
+  };
+  mkdirSync(dirname(manifestPath), { recursive: true });
+  writeFileSync(manifestPath, `${JSON.stringify(out, null, 2)}\n`);
+}
+
+function main() {
+  let parsed;
+  try {
+    parsed = parseArgs({
+      allowPositionals: true,
+      strict: true,
+      options: {
+        claude: { type: 'boolean' },
+        codex: { type: 'boolean' },
+        global: { type: 'boolean' },
+        'dry-run': { type: 'boolean' },
+        uninstall: { type: 'boolean' },
+        force: { type: 'boolean' },
+      },
+    });
+  } catch (err) {
+    usage(err.message);
+    process.exit(2);
+  }
+
+  const { values, positionals } = parsed;
+  if (positionals[0] !== 'init') {
+    usage(positionals.length ? `unknown command '${positionals[0]}'` : 'missing command');
+    process.exit(2);
+  }
+
+  const base = values.global ? homedir() : process.cwd();
+  const scope = values.global ? 'global' : 'local';
+  const runtimes = resolveRuntimes(values, base);
+  if (runtimes.length === 0) {
+    usage('no runtime detected — pass --claude and/or --codex (no .claude/.codex to auto-detect)');
+    process.exit(1);
+  }
+
+  for (const r of runtimes) {
+    const targetRoot = join(base, `.${r}`);
+    installRuntime(r, targetRoot, scope, values);
+  }
+  process.exit(0);
+}
+
+main();
