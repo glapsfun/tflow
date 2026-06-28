@@ -87,49 +87,59 @@ function installRuntime(runtime, targetRoot, scope, values) {
   let overwritten = 0;
   let skipped = 0;
 
+  // WR-02: persist whatever has actually been written so far. Invoked from a
+  // finally so a copy that throws mid-loop (disk full, EXDEV, permissions) still
+  // leaves a manifest recording the files already on disk — keeping them
+  // self-healable on the next run and removable via --uninstall.
+  const persistManifest = () => {
+    const out = {
+      name: pkg.name,
+      version: pkg.version,
+      runtime,
+      scope,
+      installedAt: new Date().toISOString(),
+      files: newFiles,
+    };
+    mkdirSync(dirname(manifestPath), { recursive: true });
+    writeFileSync(manifestPath, `${JSON.stringify(out, null, 2)}\n`);
+  };
+
   console.log(`\n[${runtime}] ${values['dry-run'] ? 'dry-run ' : ''}install → ${targetRoot}`);
-  for (const rel of rels) {
-    const src = join(payload, ...rel.split('/'));
-    const dest = join(skillsDest, ...rel.split('/'));
-    const key = `skills/${rel}`;
+  try {
+    for (const rel of rels) {
+      const src = join(payload, ...rel.split('/'));
+      const dest = join(skillsDest, ...rel.split('/'));
+      const key = `skills/${rel}`;
 
-    let action;
-    if (!existsSync(dest)) {
-      action = 'create';
-    } else {
-      const recorded = manifest.files[key];
-      const instSha = sha256(dest);
-      if (recorded && instSha === recorded) action = 'overwrite'; // pristine refresh (D-03)
-      else action = values.force ? 'overwrite' : 'skip'; // user-modified (D-03/D-04)
+      let action;
+      if (!existsSync(dest)) {
+        action = 'create';
+      } else {
+        const recorded = manifest.files[key];
+        const instSha = sha256(dest);
+        if (recorded && instSha === recorded) action = 'overwrite'; // pristine refresh (D-03)
+        else action = values.force ? 'overwrite' : 'skip'; // user-modified (D-03/D-04)
+      }
+
+      if (action === 'create') created++;
+      else if (action === 'overwrite') overwritten++;
+      else skipped++;
+      console.log(`  ${action === 'skip' ? 'skip(modified)' : action} ${key}`);
+
+      if (values['dry-run'] || action === 'skip') continue;
+      mkdirSync(dirname(dest), { recursive: true });
+      copyFileSync(src, dest); // byte-exact, mode-preserving
+      // WR-03: record a manifest entry only for files tflow actually created or
+      // overwrote — never for skip(modified) or pre-existing user files — so
+      // uninstall can't delete a path tflow never wrote.
+      newFiles[key] = sha256(src);
     }
-
-    if (action === 'create') created++;
-    else if (action === 'overwrite') overwritten++;
-    else skipped++;
-    console.log(`  ${action === 'skip' ? 'skip(modified)' : action} ${key}`);
-
-    if (values['dry-run'] || action === 'skip') continue;
-    mkdirSync(dirname(dest), { recursive: true });
-    copyFileSync(src, dest); // byte-exact, mode-preserving
-    // WR-03: record a manifest entry only for files tflow actually created or
-    // overwrote — never for skip(modified) or pre-existing user files — so
-    // uninstall can't delete a path tflow never wrote.
-    newFiles[key] = sha256(src);
+  } finally {
+    if (!values['dry-run']) persistManifest(); // WR-02: flush even on partial failure
   }
   console.log(`  → ${created} created, ${overwritten} overwritten, ${skipped} skipped`);
 
   if (values['dry-run']) return; // D-05: write nothing
-
-  const out = {
-    name: pkg.name,
-    version: pkg.version,
-    runtime,
-    scope,
-    installedAt: new Date().toISOString(),
-    files: newFiles,
-  };
-  mkdirSync(dirname(manifestPath), { recursive: true });
-  writeFileSync(manifestPath, `${JSON.stringify(out, null, 2)}\n`);
 }
 
 // Remove now-empty installer-created dirs bottom-up, confined under stopRoot.
