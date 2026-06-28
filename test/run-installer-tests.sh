@@ -272,6 +272,26 @@ assert_file "global install places SKILL.md under \$HOME/.claude" \
 assert_grep "global manifest records scope global" '"scope": "global"' \
     "$G_HOME/.claude/.tflow/install-manifest.json"
 
+# ── Scenario H: bare init auto-detects BOTH runtimes in one invocation
+#    (IN-02 — the dual-runtime auto-detect loop was previously unexercised:
+#    Scenario E covered single-.claude, G covered explicit --global --claude) ─────
+PROJ_H="$TMP_ROOT/proj-h"
+mkdir -p "$PROJ_H/.claude" "$PROJ_H/.codex"
+cli "$PROJ_H" "$TMP_ROOT/h1.log" init
+assert_status "bare init auto-detects both .claude and .codex" 0
+assert_file "dual auto-detect installs under .claude" \
+    "$PROJ_H/.claude/skills/tflow-research/SKILL.md"
+assert_file "dual auto-detect installs under .codex" \
+    "$PROJ_H/.codex/skills/tflow-research/SKILL.md"
+assert_file "dual auto-detect writes a .claude manifest" \
+    "$PROJ_H/.claude/.tflow/install-manifest.json"
+assert_file "dual auto-detect writes a .codex manifest" \
+    "$PROJ_H/.codex/.tflow/install-manifest.json"
+assert_grep "dual auto-detect .claude manifest records runtime claude" \
+    '"runtime": "claude"' "$PROJ_H/.claude/.tflow/install-manifest.json"
+assert_grep "dual auto-detect .codex manifest records runtime codex" \
+    '"runtime": "codex"' "$PROJ_H/.codex/.tflow/install-manifest.json"
+
 # ── Footer ────────────────────────────────────────────────────────────────────
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 if [ "$FAIL" -gt 0 ]; then
