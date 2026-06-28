@@ -18,8 +18,6 @@ const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const payload = join(pkgRoot, 'skills');
 const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8'));
 
-const REAL_SKILLS = ['tflow-research', 'tflow-skill-creator', 'tflow-skill-factory'];
-
 function usage(msg) {
   if (msg) console.error(`tflow: ${msg}`);
   console.error(
@@ -240,10 +238,17 @@ function selfCheck(runtime, targetRoot) {
     console.error('WARN: validate.sh not present in install — skipping self-check.');
     return;
   }
+  // IN-01: derive the self-check list from the INSTALLED tree, not a hardcoded
+  // constant, so a newly added skill is advisory-validated instead of silently
+  // skipped (the old `REAL_SKILLS` array could desync from `walk(payload)`).
+  // Skip hidden/bookkeeping entries defensively; sort for deterministic output.
+  const installed = readdirSync(skillsDest, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && !e.name.startsWith('.'))
+    .map((e) => e.name)
+    .sort();
   console.log(`[${runtime}] validate.sh self-check:`);
-  for (const name of REAL_SKILLS) {
+  for (const name of installed) {
     const skillDir = join(skillsDest, name);
-    if (!existsSync(skillDir)) continue;
     const r = spawnSync('sh', [validate, skillDir], { encoding: 'utf8' }); // argv array — no shell
     console.log(`  ${r.status === 0 ? 'PASS' : 'FAIL'} ${name}`);
   }
