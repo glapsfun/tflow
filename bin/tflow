@@ -92,7 +92,6 @@ function installRuntime(runtime, targetRoot, scope, values) {
     const src = join(payload, ...rel.split('/'));
     const dest = join(skillsDest, ...rel.split('/'));
     const key = `skills/${rel}`;
-    newFiles[key] = sha256(src); // manifest records the shipped version
 
     let action;
     if (!existsSync(dest)) {
@@ -112,6 +111,10 @@ function installRuntime(runtime, targetRoot, scope, values) {
     if (values['dry-run'] || action === 'skip') continue;
     mkdirSync(dirname(dest), { recursive: true });
     copyFileSync(src, dest); // byte-exact, mode-preserving
+    // WR-03: record a manifest entry only for files tflow actually created or
+    // overwrote — never for skip(modified) or pre-existing user files — so
+    // uninstall can't delete a path tflow never wrote.
+    newFiles[key] = sha256(src);
   }
   console.log(`  → ${created} created, ${overwritten} overwritten, ${skipped} skipped`);
 
