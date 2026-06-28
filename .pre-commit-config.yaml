@@ -16,8 +16,10 @@ repos:
           - --exclude=SC2115,SC2016,SC2329
         # Cover both scripts/ (source helpers) and tests/ (per-skill suites);
         # tflow-research and tflow-skill-factory keep their run-tests.sh under
-        # tests/, which the old scripts/-only glob silently skipped.
-        files: ^skills/.*/(scripts|tests)/.*\.sh$
+        # tests/, which the old scripts/-only glob silently skipped. The
+        # top-level test/ dir holds the installer E2E test (run-installer-tests.sh)
+        # and is added here so it is linted --shell=sh like every other script.
+        files: ^(skills/.*/(scripts|tests)|test)/.*\.sh$
         # Fixtures under scripts/fixtures/ are test data, not source scripts. Some
         # (fail-script-syntax/scripts/broken.sh) are intentionally unparseable to
         # prove validate.sh's sh -n gate rejects them — those parse errors
@@ -34,17 +36,21 @@ repos:
   - repo: local
     hooks:
       - id: skill-self-tests
-        name: skill self-test suites (research, creator, factory)
+        name: skill self-test suites (research, creator, factory) + installer E2E
         # Run every skill's suite, not just the creator's — otherwise a
         # regression in tflow-research or tflow-skill-factory ships unseen.
-        # Each run-tests.sh self-locates via dirname, so cwd is irrelevant.
+        # The installer E2E test drives the real `node bin/tflow` CLI end-to-end.
+        # Each script self-locates via dirname, so cwd is irrelevant.
         entry: >-
           sh -c 'for t in
           skills/tflow-research/tests/run-tests.sh
           skills/tflow-skill-creator/scripts/run-tests.sh
-          skills/tflow-skill-factory/tests/run-tests.sh;
+          skills/tflow-skill-factory/tests/run-tests.sh
+          test/run-installer-tests.sh;
           do printf "\n== %s ==\n" "$t"; sh "$t" || exit 1; done'
         language: system
         pass_filenames: false
         always_run: true
-        files: ^skills/.*\.(sh|md)$
+        # Fire on skill changes and on changes under test/ (the installer E2E
+        # test + bin/tflow contract live outside skills/).
+        files: ^(skills/.*\.(sh|md)|test/.*\.sh)$
