@@ -3,7 +3,7 @@
 // payload into Claude/Codex runtime skill dirs with a sha256 no-clobber manifest.
 import {
   copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync,
-  rmSync, rmdirSync,
+  rmSync, rmdirSync, statSync,
 } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -163,16 +163,18 @@ function uninstallRuntime(runtime, targetRoot) {
   let missing = 0;
 
   for (const [key, recordedSha] of Object.entries(manifest.files)) {
-    // Security V12: confine each manifest key under targetRoot — reject `..` escapes.
+    // Security V12: confine each manifest key under targetRoot — reject `..`
+    // escapes. WR-01: also reject empty/dot keys (resolve to targetRoot itself),
+    // which would otherwise fall through to sha256() on a directory.
     const file = resolve(targetRoot, ...key.split('/'));
-    if (file !== targetRoot && !file.startsWith(targetRoot + sep)) {
-      console.error(`  reject ${key} (resolves outside target root)`);
+    if (!key || file === targetRoot || !file.startsWith(targetRoot + sep)) {
+      console.error(`  reject ${key} (invalid manifest key)`);
       continue;
     }
     if (!existsSync(file)) {
       console.log(`  missing ${key}`);
       missing++;
-    } else if (sha256(file) === recordedSha) {
+    } else if (statSync(file).isFile() && sha256(file) === recordedSha) {
       rmSync(file);
       touchedDirs.add(dirname(file));
       console.log(`  removed ${key}`);
