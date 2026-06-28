@@ -140,6 +140,27 @@ function installRuntime(runtime, targetRoot, scope, values) {
   console.log(`  → ${created} created, ${overwritten} overwritten, ${skipped} skipped`);
 
   if (values['dry-run']) return; // D-05: write nothing
+
+  // WR-04: prune files recorded by the PREVIOUS manifest that are absent from
+  // the new payload (e.g. dropped in an upgrade) when they are still pristine,
+  // so they don't become un-cleanable orphans. Modified files are preserved.
+  // Mirrors the uninstall key-confinement guards (V12 + WR-01).
+  const orphanDirs = new Set();
+  for (const [key, recordedSha] of Object.entries(manifest.files)) {
+    if (Object.prototype.hasOwnProperty.call(newFiles, key)) continue;
+    const file = resolve(targetRoot, ...key.split('/'));
+    if (!key || file === targetRoot || !file.startsWith(targetRoot + sep)) continue;
+    try {
+      if (existsSync(file) && statSync(file).isFile() && sha256(file) === recordedSha) {
+        rmSync(file);
+        orphanDirs.add(dirname(file));
+        console.log(`  removed(orphan) ${key}`);
+      }
+    } catch {
+      /* leave anything we can't classify cleanly */
+    }
+  }
+  if (orphanDirs.size) pruneEmptyDirs(orphanDirs, targetRoot);
 }
 
 // Remove now-empty installer-created dirs bottom-up, confined under stopRoot.
