@@ -220,6 +220,58 @@ assert_status "bare init auto-detects an existing .claude" 0
 assert_file "auto-detected install places SKILL.md" \
     "$PROJ_E/.claude/skills/tflow-research/SKILL.md"
 
+# ── Scenario F: tampered manifest — hostile keys are rejected, uninstall does
+#    not crash, and nothing outside targetRoot is touched (WR-06; exercises the
+#    V12 traversal-reject branch + the WR-01 directory/empty-key guard) ─────────
+PROJ_F="$TMP_ROOT/proj-f"
+mkdir -p "$PROJ_F/.claude"
+cli "$PROJ_F" "$TMP_ROOT/f1.log" init --claude
+assert_status "install before tampered uninstall" 0
+
+# A sentinel OUTSIDE .claude that a "skills/../../escape" key resolves to.
+F_ESCAPE="$PROJ_F/escape"
+printf 'do-not-delete\n' > "$F_ESCAPE"
+
+# Replace the real manifest with hostile keys: a `..` escape (resolves outside
+# targetRoot), an empty key (resolves to targetRoot itself), and a bare
+# directory key (`skills`, the EISDIR trap from WR-01).
+F_MAN="$PROJ_F/.claude/.tflow/install-manifest.json"
+F_SHA='0000000000000000000000000000000000000000000000000000000000000000'
+{
+    printf '{\n'
+    printf '  "name": "@glapsfun/tflow",\n'
+    printf '  "version": "0.0.0",\n'
+    printf '  "runtime": "claude",\n'
+    printf '  "scope": "local",\n'
+    printf '  "installedAt": "1970-01-01T00:00:00.000Z",\n'
+    printf '  "files": {\n'
+    printf '    "skills/../../escape": "%s",\n' "$F_SHA"
+    printf '    "": "%s",\n' "$F_SHA"
+    printf '    "skills": "%s"\n' "$F_SHA"
+    printf '  }\n'
+    printf '}\n'
+} > "$F_MAN"
+
+cli "$PROJ_F" "$TMP_ROOT/f2.log" init --uninstall --claude
+assert_status "uninstall with a tampered manifest does not crash" 0
+assert_grep "tampered escape key is rejected" 'reject skills/../../escape' "$TMP_ROOT/f2.log"
+assert_file "uninstall leaves a path outside targetRoot untouched" "$F_ESCAPE"
+assert_grep "escape sentinel content is intact" 'do-not-delete' "$F_ESCAPE"
+
+# ── Scenario G: --global installs under $HOME and records scope "global"
+#    (WR-06 — global scope was previously unexercised) ──────────────────────────
+G_HOME="$TMP_ROOT/proj-g-home"
+mkdir -p "$G_HOME/.claude"
+OLD_HOME="${HOME:-}"
+export HOME="$G_HOME"
+cli "$G_HOME" "$TMP_ROOT/g1.log" init --global --claude
+export HOME="$OLD_HOME"
+assert_status "init --global --claude" 0
+assert_file "global install places SKILL.md under \$HOME/.claude" \
+    "$G_HOME/.claude/skills/tflow-research/SKILL.md"
+assert_grep "global manifest records scope global" '"scope": "global"' \
+    "$G_HOME/.claude/.tflow/install-manifest.json"
+
 # ── Footer ────────────────────────────────────────────────────────────────────
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 if [ "$FAIL" -gt 0 ]; then
