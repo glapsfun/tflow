@@ -1,0 +1,132 @@
+---
+name: Release
+
+# REL-01 / D-12: a v* tag push is the ONLY trigger (no workflow_dispatch, no branches).
+on:
+  push:
+    tags: ['v*']
+
+# D-12: one run per tag; never cancel an in-flight publish.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+# D-02 least privilege: id-token is wired now but UNUSED until the OIDC flip;
+# contents:write is what gh release create needs. No packages:/pull-requests:.
+permissions:
+  id-token: write
+  contents: write
+
+# CLAUDE.md POSIX convention: every inline run: block is sh, not bash.
+defaults:
+  run:
+    shell: sh
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Python + pre-commit mirror ci.yml exactly for the D-07 identical gate.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      # registry-url makes setup-node write the .npmrc line that reads
+      # NODE_AUTH_TOKEN; node 22 keeps the tree OIDC-ready for the later flip.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      # REL-03 + REL-05 fail-closed gate (D-04/D-05/D-06/D-08/D-09).
+      - name: Precondition gate
+        id: pre
+        run: |
+          set -eu
+          TAG="${GITHUB_REF_NAME}"
+          BARE="${TAG#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          # D-05/D-06: tag (minus v) must equal package.json version.
+          if [ "$BARE" != "$PKG" ]; then
+            echo "::error::tag $TAG != package.json $PKG"
+            exit 1
+          fi
+          # D-04/D-05: extract the matching ## [x.y.z] CHANGELOG section.
+          SECTION="$(awk -v ver="$BARE" '
+            $0 ~ "^## \\[" ver "\\]" {f=1; next}
+            f && /^## \[/ {exit}
+            f {print}
+          ' CHANGELOG.md)"
+          # Fail closed if that section is missing or whitespace-only.
+          if ! printf '%s' "$SECTION" | grep -q '[^[:space:]]'; then
+            echo "::error::no non-empty ## [$BARE] section in CHANGELOG.md"
+            exit 1
+          fi
+          BODY="$RUNNER_TEMP/release-body.md"
+          printf '%s\n' "$SECTION" > "$BODY"
+          # D-08/D-09: one suffix check drives both the dist-tag and prerelease flag.
+          case "$BARE" in
+            *-rc*|*-beta*|*-alpha*) DIST_TAG="next"; PRERELEASE="true" ;;
+            *) DIST_TAG="latest"; PRERELEASE="false" ;;
+          esac
+          echo "DIST_TAG=$DIST_TAG" >> "$GITHUB_ENV"
+          echo "RELEASE_BODY=$BODY" >> "$GITHUB_ENV"
+          echo "PRERELEASE=$PRERELEASE" >> "$GITHUB_ENV"
+          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+      # REL-04 / D-07: the IDENTICAL pre-commit bar ci.yml runs (shellcheck,
+      # yamllint, all four run-tests.sh suites + the installer E2E).
+      - name: CI gate (pre-commit)
+        run: pre-commit run --all-files --show-diff-on-failure
+
+      # REL-04: the Phase-4 npm pack --dry-run content-assertion guard.
+      - name: Pack assertion
+        run: sh scripts/assert-pack.sh
+
+      # REL-02 / D-01/D-09/D-11: token-auth public publish, suffix-aware dist-tag.
+      # Attestation stays deferred to the OIDC flip; only --access and --tag pass.
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set +e
+          OUT="$(npm publish --access public --tag "$DIST_TAG" 2>&1)"
+          RC=$?
+          set -e
+          printf '%s\n' "$OUT"
+          if [ "$RC" -ne 0 ]; then
+            # D-11: an already-published version is non-fatal; continue to Release.
+            if printf '%s' "$OUT" | grep -Eiq 'EPUBLISHCONFLICT|cannot publish over|previously published version'; then
+              echo "::warning::version already published — continuing to Release step"
+            else
+              echo "::error::npm publish failed (rc=$RC)"
+              exit "$RC"
+            fi
+          fi
+
+      # REL-05 / D-08/D-10: created LAST, idempotent, body is the CHANGELOG section.
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          TAG="$GITHUB_REF_NAME"
+          PRE=""
+          # D-08: prerelease only for suffixed tags.
+          if [ "$PRERELEASE" = "true" ]; then
+            PRE="--prerelease"
+          fi
+          # D-10/D-11: view-then-edit-else-create makes a re-pushed tag idempotent.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --notes-file "$RELEASE_BODY" --title "$TAG" $PRE
+          else
+            gh release create "$TAG" --notes-file "$RELEASE_BODY" --title "$TAG" --verify-tag $PRE
+          fi
