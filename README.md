@@ -50,6 +50,19 @@ skills/<name>/
 Skills install portably under both `.claude/skills/` and `.codex/skills/` — the same
 `SKILL.md` must validate in either location.
 
+## Documentation
+
+- [Install on your runtime](https://github.com/glapsfun/tflow/blob/main/docs/install-on-your-runtime.md)
+  — for users: `npx` install, every flag with real CLI output, and troubleshooting.
+- [Versioning policy](https://github.com/glapsfun/tflow/blob/main/docs/versioning.md)
+  — for maintainers: the semver policy and `1.0.0` graduation criterion.
+- [Release runbook](https://github.com/glapsfun/tflow/blob/main/docs/releasing.md)
+  — for maintainers: the `npm version` → `git push --follow-tags` flow.
+- [CHANGELOG](CHANGELOG.md) — what changed in each release.
+
+The three `docs/` guides are linked as absolute GitHub URLs because `docs/` is not shipped
+in the npm tarball; the `CHANGELOG.md` link is relative because it does ship.
+
 ## Development
 
 ```sh
