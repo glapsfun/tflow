@@ -40,7 +40,6 @@ SCAFFOLD="$SCRIPT_DIR/../assets/scaffold/SKILL.md"
 REPORT="$SKILL_DIR/.skill-improvement.md"
 TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/tflow-improve.XXXXXX")
 
-# shellcheck disable=SC2329  # invoked indirectly via the trap below
 cleanup() {
     rm -rf "$TMP_DIR"
 }
@@ -98,7 +97,6 @@ fi
 {
     printf '# Skill Improvement Report\n\n'
     printf '## Validation\n\n'
-    # shellcheck disable=SC2016  # literal backticks are intended markdown, not expansion
     printf -- '- Command: `sh %s %s`\n' "$VALIDATE" "$SKILL_DIR"
     printf -- '- Result: %s\n\n' "$VALIDATION_STATUS"
     printf '```text\n'

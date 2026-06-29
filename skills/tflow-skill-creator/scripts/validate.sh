@@ -315,12 +315,17 @@ for script in "$TARGET_DIR/scripts"/*.sh; do
     fi
 done
 
-# R-SHELLCHECK — optional; WARN if absent (D-06), FAIL if present and non-zero
+# R-SHELLCHECK — optional; WARN if absent (D-06), FAIL if present and non-zero.
+# Excludes match the project-wide shellcheck policy (.pre-commit-config.yaml):
+# SC2329 (trap-invoked function "never invoked"), SC2016 (literal backticks in a
+# single-quoted printf), SC2115 (rm with a guaranteed-non-empty var). Aligning
+# with that policy keeps the gate version-stable and consistent with CI instead
+# of relying on shellcheck-version-sensitive inline disable directives.
 if command -v shellcheck >/dev/null 2>&1; then
     SC_FAIL=0
     for script in "$TARGET_DIR/scripts"/*.sh; do
         [ -f "$script" ] || continue
-        if shellcheck --shell=sh "$script"; then
+        if shellcheck --shell=sh --exclude=SC2115,SC2016,SC2329 "$script"; then
             emit PASS "shellcheck: $(basename "$script")"
         else
             emit FAIL "shellcheck: $(basename "$script") (see above for warnings)"
