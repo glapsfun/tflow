@@ -276,12 +276,21 @@ run_script_contract_tests() {
 run_real_skill_validation_tests() {
     # Every shipped skill must pass the shipped validate.sh cleanly — including
     # Rule D (shellcheck) when shellcheck is present. Regression guard for the
-    # SC2329 trap-invoked-cleanup false positive that made the installer
-    # self-check report FAIL tflow-skill-creator in v0.1.0.
+    # shellcheck false positives that made the installer self-check report
+    # FAIL tflow-skill-creator in v0.1.0. On failure, surface validate.sh's
+    # output and the shellcheck version so cross-environment differences are
+    # diagnosable instead of an opaque "got 1".
     SKILLS_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
     for skill in tflow-research tflow-skill-creator tflow-skill-factory; do
         [ -d "$SKILLS_DIR/$skill" ] || continue
-        run_cmd_test "shipped skill validates: $skill" 0 sh "$VALIDATE" "$SKILLS_DIR/$skill"
+        if sh "$VALIDATE" "$SKILLS_DIR/$skill" > "$TMP_ROOT/vsc.txt" 2>&1; then
+            pass "shipped skill validates: $skill (exit 0 as expected)"
+        else
+            fail "shipped skill validates: $skill" "validate.sh exited non-zero"
+            command -v shellcheck >/dev/null 2>&1 && \
+                shellcheck --version 2>&1 | sed 's/^/    [diag] shellcheck /'
+            grep -vE '^PASS ' "$TMP_ROOT/vsc.txt" | sed 's/^/    [diag] /'
+        fi
     done
 }
 
