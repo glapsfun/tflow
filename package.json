@@ -1,6 +1,6 @@
 {
   "name": "@glapsfun/tflow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "A factory for authoring Agent Skills to the agentskills.io open standard.",
   "bin": {
