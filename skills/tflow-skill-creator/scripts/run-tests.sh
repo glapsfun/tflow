@@ -275,10 +275,10 @@ run_script_contract_tests() {
 
 run_real_skill_validation_tests() {
     # Every shipped skill must pass the shipped validate.sh cleanly — including
-    # Rule D (shellcheck) when shellcheck is present. Regression guard for the
-    # shellcheck false positives that made the installer self-check report
+    # the Rule-D lint gate when shellcheck is present. Regression guard for the
+    # lint false positives that made the installer self-check report
     # FAIL tflow-skill-creator in v0.1.0. On failure, surface validate.sh's
-    # output and the shellcheck version so cross-environment differences are
+    # output and the linter version so cross-environment differences are
     # diagnosable instead of an opaque "got 1".
     SKILLS_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
     for skill in tflow-research tflow-skill-creator tflow-skill-factory; do
