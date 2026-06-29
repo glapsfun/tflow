@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The post-install `validate.sh` self-check no longer reports
+  `FAIL tflow-skill-creator` on machines with shellcheck installed. The shipped
+  `validate.sh` runs shellcheck strictly (no excludes), but `improve.sh` and
+  `package.sh` tripped three known false positives (SC2329 on the trap-invoked
+  `cleanup()`, SC2016 on a literal-backtick `printf`, SC2115 on a guarded
+  `rm -rf`); each now carries a documented inline waiver so the flagship skill
+  passes its own gate. Added a regression test asserting every shipped skill
+  validates clean.
+
 ## [0.1.0] - 2026-06-28
 
 ### Added

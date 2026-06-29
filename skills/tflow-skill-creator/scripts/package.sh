@@ -63,6 +63,7 @@ if [ -n "$SYMLINK" ]; then
 fi
 
 TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/tflow-package.XXXXXX")
+# shellcheck disable=SC2329  # invoked indirectly via the trap below
 cleanup() {
     rm -rf "$TMP_DIR"
 }
@@ -87,6 +88,7 @@ done
 
 DIST_DIR="$SKILL_DIR/dist"
 mkdir -p "$DIST_DIR"
+# shellcheck disable=SC2115  # $SKILL_NAME is a validated basename, never empty
 rm -rf "$DIST_DIR/$SKILL_NAME" "$DIST_DIR/$SKILL_NAME.tar.gz"
 cp -R "$STAGE_DIR" "$DIST_DIR/$SKILL_NAME"
 cp "$ARCHIVE_TMP" "$DIST_DIR/$SKILL_NAME.tar.gz"

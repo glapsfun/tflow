@@ -273,6 +273,18 @@ run_script_contract_tests() {
     fi
 }
 
+run_real_skill_validation_tests() {
+    # Every shipped skill must pass the shipped validate.sh cleanly — including
+    # Rule D (shellcheck) when shellcheck is present. Regression guard for the
+    # SC2329 trap-invoked-cleanup false positive that made the installer
+    # self-check report FAIL tflow-skill-creator in v0.1.0.
+    SKILLS_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    for skill in tflow-research tflow-skill-creator tflow-skill-factory; do
+        [ -d "$SKILLS_DIR/$skill" ] || continue
+        run_cmd_test "shipped skill validates: $skill" 0 sh "$VALIDATE" "$SKILLS_DIR/$skill"
+    done
+}
+
 run_static_script_tests
 
 for fixture_dir in "$FIXTURES"/*/; do
@@ -285,6 +297,7 @@ for fixture_dir in "$FIXTURES"/*/; do
 done
 
 run_script_contract_tests
+run_real_skill_validation_tests
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 if [ "$FAIL" -gt 0 ]; then
