@@ -91,7 +91,7 @@ assert_match "check phase fixes are keyed to files" "$CHECK_PHASE" \
 assert_match "arbiter never softens a failing test" "$CHECK_PHASE" \
     'may not soften|never soften'
 assert_match "doc phase writes docs into the skill" "$DOC_PHASE" \
-    'into the skill director'
+    'into the skill directory'
 assert_match "doc phase records iterations used" "$DOC_PHASE" \
     'iterations used'
 assert_match "doc phase writes the run summary" "$DOC_PHASE" \
