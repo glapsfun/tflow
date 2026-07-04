@@ -11,14 +11,19 @@ artifact is gated through (spec compliance, tflow conventions, and portability).
 
 ## The shipped skills
 
+- **`tflow-skill-idea`** — interactive idea shaping: Five Whys and a human-chosen
+  direction turn a raw prompt into a research-ready eight-field idea brief.
 - **`tflow-research`** — bounded web research synthesized into a sourced decision brief
   across brainstorm, find-idea, and improve-idea modes.
+- **`tflow-skill-test`** — TDD for skills: a `define` mode that writes the test plan
+  before the skill exists, and a `run` mode that executes the three-layer pass
+  (structural gate, script checks, judged eval scenarios).
 - **`tflow-skill-creator`** — the disciplined factory loop that takes a skill from intent to
   distributable evidence: the `init` / `validate` / `improve` / `package` scripts plus the
   `run-tests.sh` self-test suite.
-- **`tflow-skill-factory`** — a thin chaining orchestrator that runs `tflow-research` and then
-  `tflow-skill-creator` end-to-end, turning a plain-text intent into a validated skill
-  directory.
+- **`tflow-skill-factory`** — the loop controller: idea → research → validate →
+  test-plan → create → test-run → check → doc, with bounded re-research and
+  improvement loops, artifact gates between every phase, and a final run summary.
 
 ## Quick start
 
