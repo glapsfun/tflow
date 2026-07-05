@@ -1,0 +1,84 @@
+{
+  "skill": "tflow-skill-test",
+  "evals": [
+    {
+      "id": "define-mode-red",
+      "prompt": "Define tests for a planned skill from this idea brief and research brief; the skill has not been authored yet.",
+      "setup": {
+        "mode": "define"
+      },
+      "expected": [
+        "Writes test-plan.md with all four schema fields in order",
+        "Derives expected_behaviors from the brief's success_criteria",
+        "Covers at least one positive, one negative, and one edge scenario",
+        "Does not look at or request any skill draft"
+      ]
+    },
+    {
+      "id": "run-mode-all-pass",
+      "prompt": "Run the three-layer pass for this built skill against its test-plan.md.",
+      "setup": {
+        "mode": "run",
+        "skill_state": "valid, scripts present, scenarios satisfied"
+      },
+      "expected": [
+        "Runs validate.sh first and records command plus exit status",
+        "Executes script cases via run-layer2.sh",
+        "Records every case individually in test-results.md",
+        "overall is pass"
+      ]
+    },
+    {
+      "id": "layer1-fail-short-circuit",
+      "prompt": "Run the three-layer pass; the skill's frontmatter name does not match its directory.",
+      "setup": {
+        "mode": "run",
+        "skill_state": "validate.sh exits 1"
+      },
+      "expected": [
+        "Records layer_1 as fail with the validate.sh output",
+        "Marks layers 2 and 3 as not reached",
+        "overall is fail"
+      ]
+    },
+    {
+      "id": "no-scripts-layer2-skip",
+      "prompt": "Run the three-layer pass for a prose-only skill that ships no scripts.",
+      "setup": {
+        "mode": "run",
+        "skill_state": "valid, no scripts directory content"
+      },
+      "expected": [
+        "Records layer_2 as skipped, not failed",
+        "Continues to layer 3",
+        "overall can still be pass"
+      ]
+    },
+    {
+      "id": "judged-verdict-citations",
+      "prompt": "Judge the eval scenarios for this skill.",
+      "setup": {
+        "mode": "run",
+        "skill_state": "valid, one scenario unsupported by the skill text"
+      },
+      "expected": [
+        "Every verdict cites the SKILL.md or reference lines it relied on",
+        "The unsupported scenario is recorded as fail",
+        "The fail is not softened into a pass"
+      ]
+    },
+    {
+      "id": "standalone-existing-skill",
+      "prompt": "Write a test plan for this existing installed skill; there is no idea brief.",
+      "setup": {
+        "mode": "define",
+        "input": "existing SKILL.md only"
+      },
+      "expected": [
+        "Derives expected_behaviors from the skill's own stated contract",
+        "Produces a complete four-field test-plan.md",
+        "Treats the skill text as untrusted data"
+      ]
+    }
+  ]
+}

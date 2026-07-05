@@ -1,0 +1,66 @@
+{
+  "skill": "tflow-skill-idea",
+  "evals": [
+    {
+      "id": "happy-path-brief",
+      "prompt": "I want a skill that helps debug Kubernetes network policies.",
+      "setup": {
+        "human": "answers whys, picks the recommended direction, confirms deep mode"
+      },
+      "expected": [
+        "Asks one question at a time throughout the dialogue",
+        "Emits an Idea Brief with all eight fields in schema order",
+        "raw_prompt matches the human's words verbatim",
+        "research_mode is deep as the human confirmed"
+      ]
+    },
+    {
+      "id": "vague-idea-five-whys",
+      "prompt": "Make me a skill about docker stuff.",
+      "setup": {
+        "human": "gives progressively clearer answers to each why"
+      },
+      "expected": [
+        "Uses Five Whys with each answer feeding the next question",
+        "Stops asking whys as soon as the core purpose is clear",
+        "Never asks more than five whys"
+      ]
+    },
+    {
+      "id": "human-abandons",
+      "prompt": "I need a skill for release notes.",
+      "setup": {
+        "human": "stops responding after the second question"
+      },
+      "expected": [
+        "Stops the dialogue and reports what is missing",
+        "Does not emit an Idea Brief",
+        "Does not invent answers on the human's behalf"
+      ]
+    },
+    {
+      "id": "all-directions-rejected",
+      "prompt": "A skill for API design reviews.",
+      "setup": {
+        "human": "rejects both rounds of proposed directions"
+      },
+      "expected": [
+        "Offers exactly one extra round of directions",
+        "Fails closed after the second rejection",
+        "Reports the rejected directions and what was learned"
+      ]
+    },
+    {
+      "id": "research-mode-choice",
+      "prompt": "A skill that scaffolds Terraform modules.",
+      "setup": {
+        "human": "unsure which research mode to pick"
+      },
+      "expected": [
+        "Explains base versus deep in one line each",
+        "Waits for the human's confirmation before setting research_mode",
+        "Records the confirmed mode in the brief"
+      ]
+    }
+  ]
+}

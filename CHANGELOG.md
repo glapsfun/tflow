@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `tflow-skill-idea`: interactive idea shaping into an eight-field idea brief
+  (Five Whys, direction choice, fail-closed on abandonment).
+- `tflow-skill-test`: TDD for skills — `define` mode writes the test plan before
+  authoring; `run` mode executes the three-layer pass via `run-layer2.sh`.
+
+### Changed
+
+- **Breaking:** `tflow-skill-factory` rewritten as an eight-step loop controller
+  (idea → research → validate → test-plan → create → test-run → check → doc)
+  with bounded re-research (2) and improvement (3) loops, artifact gates, and
+  internal validate/check/doc phase references. It now requires all four
+  sibling skills.
+
 ## [0.1.1] - 2026-06-29
 
 ### Fixed
