@@ -24,6 +24,9 @@ artifact is gated through (spec compliance, tflow conventions, and portability).
 - **`tflow-skill-factory`** — the loop controller: idea → research → validate →
   test-plan → create → test-run → check → doc, with bounded re-research and
   improvement loops, artifact gates between every phase, and a final run summary.
+- **`tflow-prompt`** — prompt enhancement: rewrites a raw or first-draft prompt
+  using established prompt-engineering techniques and returns the stronger
+  prompt plus an auditable change log.
 
 ## Quick start
 

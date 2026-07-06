@@ -38,7 +38,7 @@ repos:
   - repo: local
     hooks:
       - id: skill-self-tests
-        name: skill self-test suites (research, creator, idea, test, factory) + installer E2E
+        name: skill self-test suites (research, creator, idea, test, factory, prompt) + installer E2E
         # Run every skill's suite, not just the creator's — otherwise a
         # regression in tflow-research or tflow-skill-factory ships unseen.
         # The installer E2E test drives the real `node bin/tflow` CLI end-to-end.
@@ -50,6 +50,7 @@ repos:
           skills/tflow-skill-idea/tests/run-tests.sh
           skills/tflow-skill-test/tests/run-tests.sh
           skills/tflow-skill-factory/tests/run-tests.sh
+          skills/tflow-prompt/tests/run-tests.sh
           test/run-installer-tests.sh
           test/run-stamp-changelog-tests.sh;
           do printf "\n== %s ==\n" "$t"; sh "$t" || exit 1; done'

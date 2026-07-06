@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (Five Whys, direction choice, fail-closed on abandonment).
 - `tflow-skill-test`: TDD for skills — `define` mode writes the test plan before
   authoring; `run` mode executes the three-layer pass via `run-layer2.sh`.
+- `tflow-prompt`: prompt enhancement — rewrites a raw or first-draft prompt with
+  earned prompt-engineering techniques and returns it with an auditable change
+  log (script-free, portable across Claude Code and Codex).
 
 ### Changed
 

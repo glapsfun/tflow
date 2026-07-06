@@ -1,0 +1,44 @@
+{
+  "skill": "tflow-prompt",
+  "evals": [
+    {
+      "id": "vague-one-liner",
+      "prompt": "make this prompt better: write a function to clean up the data",
+      "expected": [
+        "Returns the rewritten prompt in a fenced code block",
+        "Names the language, signature, and concrete cleaning rules instead of leaving 'clean up the data' vague",
+        "Includes a change log whose lines are tagged by technique (e.g. clarity, structure)",
+        "Closes with a completeness note naming which of the four components are present and what the user must still supply"
+      ]
+    },
+    {
+      "id": "format-sensitive-classification",
+      "prompt": "I want to improve this prompt for classifying support tickets into billing, bug, or feature-request. Here's what I have: 'Read the ticket and tell me the category.' I need the output to be reliable and machine-parseable.",
+      "expected": [
+        "Returns an enhanced prompt in a fenced code block",
+        "Adds structure (separated instruction/input) and a fixed, machine-parseable output indicator such as a single category label",
+        "Adds 2-5 short examples demonstrating the categories",
+        "Change log tags the additions and the completeness note flags that real ticket text is still required"
+      ]
+    },
+    {
+      "id": "over-engineered-cut",
+      "prompt": "optimize this prompt please: 'You are an extraordinarily talented world-class award-winning senior copywriter with a PhD. Think very very carefully step by step. It is ABSOLUTELY CRITICAL you MUST NOT FAIL. Please please write me a tweet about our new coffee subscription. Take a deep breath. Do not hallucinate.'",
+      "expected": [
+        "Returns a materially shorter enhanced prompt in a fenced code block",
+        "Removes the inflated persona stacking, all-caps pressure, and filler ('take a deep breath', 'do not hallucinate')",
+        "Change log is dominated by a 'cut' tag rather than adding more techniques",
+        "Keeps the real constraints (length, product facts, tone)"
+      ]
+    },
+    {
+      "id": "thin-prompt-ask-first",
+      "prompt": "can you enhance my prompt? here it is: 'help me write something good'",
+      "expected": [
+        "Recognizes the prompt is too thin to infer a goal",
+        "Asks up to three targeted clarifying questions (e.g. goal, audience, result shape) rather than inventing intent",
+        "Does not fabricate domain facts or a finished prompt before the goal is known"
+      ]
+    }
+  ]
+}
