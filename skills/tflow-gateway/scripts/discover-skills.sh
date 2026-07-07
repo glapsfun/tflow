@@ -45,6 +45,9 @@ for ROOT in "$@"; do
         # quotes from a scalar, mirroring validate.sh's quoted-string subset.
         if awk '
             function strip(v, first, last) {
+                # Output is one name<TAB>description line per skill; a tab
+                # inside a field would corrupt that contract.
+                gsub(/\t/, " ", v)
                 sub(/^[[:space:]]+/, "", v)
                 sub(/[[:space:]]+$/, "", v)
                 if (length(v) >= 2) {

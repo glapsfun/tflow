@@ -133,6 +133,17 @@ run_discover_contract_tests() {
         fail "discover dedupes skills across roots" "tflow-alpha listed $COUNT times"
     fi
 
+    TAB_ROOT="$TMP_ROOT/tab-desc-root"
+    mkdir -p "$TAB_ROOT/tflow-tabbed"
+    printf -- '---\nname: tflow-tabbed\ndescription: Use when a\ttab lurks\n---\n' \
+        > "$TAB_ROOT/tflow-tabbed/SKILL.md"
+    sh "$DISCOVER" "$TAB_ROOT" > "$OUT"
+    if grep -q "^tflow-tabbed${TAB}Use when a tab lurks\$" "$OUT"; then
+        pass "discover flattens tabs inside descriptions"
+    else
+        fail "discover flattens tabs inside descriptions" "TSV contract broken"
+    fi
+
     sh "$DISCOVER" "$FIXTURES/pass-discover-skips-malformed" > "$OUT" 2> "$ERR"
     if grep -q "^tflow-alpha${TAB}" "$OUT" \
         && ! grep -q '^tflow-broken' "$OUT" \
@@ -151,6 +162,11 @@ run_artifacts_contract_tests() {
         sh "$ARTIFACTS" "$TMP_ROOT/does-not-exist" enhanced-prompt.md
     run_cmd_test "artifacts accepts unknown non-empty artifact" 0 \
         sh "$ARTIFACTS" "$FIXTURES/pass-artifacts-complete" research-brief.md
+    run_cmd_test "artifacts rejects path-separator artifact name" 1 \
+        sh "$ARTIFACTS" "$FIXTURES/pass-artifacts-complete" \
+        ../pass-artifacts-complete/research-brief.md
+    run_cmd_test "artifacts rejects dot-prefixed artifact name" 1 \
+        sh "$ARTIFACTS" "$FIXTURES/pass-artifacts-complete" .args
 }
 
 run_static_script_tests

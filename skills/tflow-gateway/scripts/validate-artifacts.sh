@@ -46,6 +46,15 @@ check_sections() {
 }
 
 for NAME in "$@"; do
+    # Confine every check to <run-dir>: a name with a path separator (or a
+    # dot-prefixed name like ../x) could report PASS for a file outside it.
+    case "$NAME" in
+        */*|.*)
+            printf 'FAIL [%s: artifact name must be a plain filename]\n' "$NAME" >&2
+            FAIL=1
+            continue
+            ;;
+    esac
     FILE="$RUN_DIR/$NAME"
     if [ ! -f "$FILE" ]; then
         printf 'FAIL [%s: missing]\n' "$NAME" >&2
