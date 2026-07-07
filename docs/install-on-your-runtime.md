@@ -36,15 +36,25 @@ npx @glapsfun/tflow init
 
 ```
 [claude] install → /your/project/.claude
+  create skills/tflow-gateway/SKILL.md
+  create skills/tflow-gateway/scripts/discover-skills.sh
+  create skills/tflow-prompt/SKILL.md
   create skills/tflow-research/SKILL.md
   create skills/tflow-skill-creator/SKILL.md
   create skills/tflow-skill-creator/scripts/validate.sh
   create skills/tflow-skill-factory/SKILL.md
-  → 4 created, 0 overwritten, 0 skipped
+  create skills/tflow-skill-idea/SKILL.md
+  create skills/tflow-skill-test/SKILL.md
+  … (one line per installed file)
+  → 44 created, 0 overwritten, 0 skipped
 [claude] validate.sh self-check:
+  PASS tflow-gateway
+  PASS tflow-prompt
   PASS tflow-research
   PASS tflow-skill-creator
   PASS tflow-skill-factory
+  PASS tflow-skill-idea
+  PASS tflow-skill-test
 ```
 
 ### Target a specific runtime — `--claude` / `--codex`
@@ -122,9 +132,13 @@ installed skill and reports a per-skill result:
 
 ```
 [claude] validate.sh self-check:
+  PASS tflow-gateway
+  PASS tflow-prompt
   PASS tflow-research
   PASS tflow-skill-creator
   PASS tflow-skill-factory
+  PASS tflow-skill-idea
+  PASS tflow-skill-test
 ```
 
 A `FAIL` here is **advisory** — it is reported but the install still exits `0`. If POSIX `sh`
