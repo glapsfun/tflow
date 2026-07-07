@@ -6,6 +6,8 @@ dist/
 
 # AI
 .codex
+.agents
+skills-lock.json
 .claude
 # docs/ is ignored (scratch like docs/superpowers/), but the published, README-linked
 # Phase 7 docs are tracked — same ignore-dir/allow-specific-files pattern as .github/workflows/ below.
