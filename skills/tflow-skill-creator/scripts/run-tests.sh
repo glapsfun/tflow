@@ -282,7 +282,7 @@ run_real_skill_validation_tests() {
     # diagnosable instead of an opaque "got 1".
     SKILLS_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
     for skill in tflow-research tflow-skill-creator tflow-skill-factory \
-        tflow-skill-idea tflow-skill-test tflow-prompt; do
+        tflow-skill-idea tflow-skill-test tflow-prompt tflow-gateway; do
         [ -d "$SKILLS_DIR/$skill" ] || continue
         if sh "$VALIDATE" "$SKILLS_DIR/$skill" > "$TMP_ROOT/vsc.txt" 2>&1; then
             pass "shipped skill validates: $skill (exit 0 as expected)"

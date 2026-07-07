@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tflow-prompt`: prompt enhancement — rewrites a raw or first-draft prompt with
   earned prompt-engineering techniques and returns it with an auditable change
   log (script-free, portable across Claude Code and Codex).
+- `tflow-gateway`: the family front door — sharpens a raw request with
+  `tflow-prompt`, discovers installed tflow skills, routes to the best fit,
+  and accepts the result against acceptance checks fixed before delegation,
+  with a bounded re-delegation loop (max 2 rounds).
 
 ### Changed
 

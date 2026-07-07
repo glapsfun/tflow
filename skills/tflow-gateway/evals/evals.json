@@ -1,0 +1,65 @@
+{
+  "skill": "tflow-gateway",
+  "evals": [
+    {
+      "id": "route-to-factory",
+      "prompt": "tflow: create skill clickhouse",
+      "setup": {
+        "installed": "all six sibling tflow skills"
+      },
+      "expected": [
+        "Writes enhanced-prompt.md with acceptance_checks before any delegation",
+        "routing-decision.md chooses tflow-skill-factory with rejected candidates listed",
+        "Delegates the enhanced prompt, not the raw one",
+        "final-report.md carries per-check verdicts"
+      ]
+    },
+    {
+      "id": "route-to-prompt",
+      "prompt": "tflow: make this prompt stronger: 'write me a blog post'",
+      "setup": {
+        "installed": "all six sibling tflow skills"
+      },
+      "expected": [
+        "routing-decision.md chooses tflow-prompt directly, not the factory",
+        "No foreground/background question is asked for a short task",
+        "Acceptance checks are judged against the improved prompt"
+      ]
+    },
+    {
+      "id": "no-route-halt",
+      "prompt": "tflow: resize my vacation photos to 800px",
+      "setup": {
+        "installed": "all six sibling tflow skills"
+      },
+      "expected": [
+        "Halts with a no-route report naming the rejected candidates",
+        "No delegation happens",
+        "No fabricated routing to a poorly matching skill"
+      ]
+    },
+    {
+      "id": "re-delegation-budget",
+      "prompt": "tflow: create skill clickhouse",
+      "setup": {
+        "validation": "an acceptance check fails on every delegation attempt"
+      },
+      "expected": [
+        "Diagnoses the failure before re-delegating",
+        "Never exceeds 2 re-delegation rounds",
+        "Halts with validation.md showing the failed checks and final-report.md listing remaining issues"
+      ]
+    },
+    {
+      "id": "background-choice",
+      "prompt": "tflow: create skill clickhouse",
+      "setup": {
+        "runtime": "offers a subagent mechanism"
+      },
+      "expected": [
+        "Asks foreground or background exactly once, only because the factory pipeline is long-lived",
+        "Background mode still lands every artifact in the run directory"
+      ]
+    }
+  ]
+}
